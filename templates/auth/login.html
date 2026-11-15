@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In – MINDGUARD{% endblock %}
+
+{% block content %}
+<div class="auth-wrap"><div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-8">
+            <div class="mg-card p-4 p-md-5 bg-white shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="brand-icon mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Welcome Back</h3>
+                    <p class="text-secondary small">Sign in to your private wellness console</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Email Address -->
+                    <div class="mb-3">
+                        <label for="loginEmail" class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="email" class="form-control border-start-0" id="loginEmail" name="email" 
+                                   value="{{ email or '' }}" placeholder="name@example.com" required autofocus>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label for="loginPassword" class="form-label">Password</label>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="loginPassword" 
+                                   name="password" placeholder="Enter your password" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="loginPassword">
+                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="remember">
+                            <label class="form-check-label small text-secondary" for="rememberMe">Remember me for 14 days</label>
+                        </div>
+                        <span class="small text-muted" title="Password reset requires security verification by an admin">Forgot password?</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-mg w-100 py-2 justify-content-center">
+                        <i data-lucide="log-in"></i> Sign In Securely
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top border-light">
+                    <p class="text-secondary small mb-0">
+                        Don't have an account yet? <a href="{{ url_for('auth.register') }}" class="fw-bold">Register Free</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

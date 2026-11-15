@@ -1,0 +1,173 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Privacy & Security – MINDGUARD{% endblock %}
+{% block page_title %}Privacy & Security Console{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-1">Your Data. Your Sovereignty.</h3>
+        <p class="text-secondary small mb-0">Inspect how your records are protected by PostgreSQL relational security mechanisms and control your data footprint.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('privacy.export_data') }}" class="btn btn-primary-mg">
+            <i data-lucide="download"></i> Export All Data (JSON)
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 1. Stored Records & Inventory -->
+    <div class="col-lg-6">
+        <div class="mg-card h-100">
+            <div class="mg-card-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Your Stored Data Inventory</h5>
+                    <small class="text-secondary">Summary of records stored in PostgreSQL</small>
+                </div>
+                <span class="badge badge-mg badge-success-mg"><i data-lucide="database"></i> PostgreSQL 18</span>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                    <div>
+                        <strong class="d-block small">Profile Record</strong>
+                        <span class="text-muted small">Full name, email, encrypted password hash</span>
+                    </div>
+                    <span class="badge badge-mg badge-primary-mg">1 Record</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                    <div>
+                        <strong class="d-block small">Daily Mood Check-ins</strong>
+                        <span class="text-muted small">Protected under PostgreSQL Row-Level Security</span>
+                    </div>
+                    <span class="badge badge-mg badge-primary-mg">{{ mood_count }} Records</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                    <div>
+                        <strong class="d-block small">Private Journal Reflections</strong>
+                        <span class="text-muted small">Fernet 256-bit encrypted ciphertext</span>
+                    </div>
+                    <span class="badge badge-mg badge-primary-mg">{{ journal_count }} Records</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                    <div>
+                        <strong class="d-block small">Active Sessions</strong>
+                        <span class="text-muted small">Tracked with hashed session tokens</span>
+                    </div>
+                    <span class="badge badge-mg badge-primary-mg">{{ sessions | length }} Logged</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Consent Preferences -->
+    <div class="col-lg-6">
+        <div class="mg-card h-100">
+            <div class="mg-card-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Consent Preferences</h5>
+                    <small class="text-secondary">Granular permissions for wellness data processing</small>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('privacy.update_consent') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-4">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="analyticsConsentSwitch" name="analytics_consent"
+                               {% if consents | selectattr('consent_type', 'equalto', 'wellness_analytics') | selectattr('consent_status', 'equalto', 'GRANTED') | list %}checked{% endif %}>
+                        <label class="form-check-label fw-bold small" for="analyticsConsentSwitch">
+                            Wellness Analytics Processing
+                        </label>
+                        <p class="text-secondary small mb-0">Allows the system to aggregate your mood and stress records into personal trend graphs.</p>
+                    </div>
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="storageConsentSwitch" name="storage_consent"
+                               {% if consents | selectattr('consent_type', 'equalto', 'data_storage') | selectattr('consent_status', 'equalto', 'GRANTED') | list %}checked{% endif %}>
+                        <label class="form-check-label fw-bold small" for="storageConsentSwitch">
+                            Persistent Wellness Record Retention
+                        </label>
+                        <p class="text-secondary small mb-0">Permits database storage of historical check-ins across multiple days.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary-mg btn-sm">
+                    <i data-lucide="save"></i> Update Preferences
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Security Architecture Verification -->
+    <div class="col-12">
+        <div class="mg-card bg-white">
+            <h5 class="fw-bold mb-2">How Relational Security Guarantees Your Privacy</h5>
+            <p class="text-secondary small mb-3">MindGuard was engineered specifically to demonstrate how relational databases enforce security mechanisms.</p>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <h6 class="fw-bold text-primary mb-1"><i data-lucide="shield"></i> Row-Level Security</h6>
+                        <p class="text-secondary small mb-0">
+                            Policies on <code>mood_records</code>, <code>journal_entries</code>, and <code>wellness_reports</code> enforce that PostgreSQL only yields records matching <code>app.current_user_id</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <h6 class="fw-bold text-success mb-1"><i data-lucide="key"></i> Fernet Cryptography</h6>
+                        <p class="text-secondary small mb-0">
+                            Reflections are sealed with authenticated symmetric tokens. If the database file were ever dumped, journal contents remain encrypted.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <h6 class="fw-bold text-danger mb-1"><i data-lucide="lock"></i> Principle of Least Privilege</h6>
+                        <p class="text-secondary small mb-0">
+                            The Flask application connects as <code>mindguard_app</code>, which lacks <code>SUPERUSER</code> and <code>BYPASSRLS</code> privileges, strictly bound to security rules.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Permanent Account & Data Deletion -->
+    <div class="col-12">
+        <div class="mg-card border-danger-subtle bg-white">
+            <h5 class="fw-bold text-danger mb-2">Delete Account & Permanent Purge</h5>
+            <p class="text-secondary small mb-3">
+                Permanently deletes your user account, mood records, encrypted journal reflections, consent records, and active sessions. <strong>This action is irreversible.</strong>
+            </p>
+
+            <form method="POST" action="{{ url_for('privacy.delete_account') }}" class="row g-3 align-items-center"
+                  onsubmit="return confirm('WARNING: Are you absolutely certain you want to permanently delete your account and all wellness records? This cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="col-md-6">
+                    <label for="confirmDeleteText" class="form-label small text-muted">
+                        Type <code>DELETE MY DATA</code> to confirm:
+                    </label>
+                    <input type="text" class="form-control" id="confirmDeleteText" name="confirm_text" 
+                           placeholder="DELETE MY DATA" required>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-danger-mg">
+                        <i data-lucide="trash-2"></i> Permanently Delete My Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

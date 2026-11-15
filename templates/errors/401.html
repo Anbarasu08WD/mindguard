@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}401 – Unauthorized – MINDGUARD{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-5 text-center">
+    <div class="mg-card p-5 max-w-700 mx-auto bg-white shadow-sm" style="max-width: 600px;">
+        <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--primary-light); color: var(--primary);">
+            <i data-lucide="shield-alert"></i>
+        </div>
+        <h2 class="fw-bold mb-2">401 – Authentication Required</h2>
+        <p class="text-secondary small mb-4">
+            You must be logged in with a valid authorized session to view this wellness resource.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary-mg">Sign In</a>
+            <a href="{{ url_for('landing') }}" class="btn btn-secondary-mg">Return Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

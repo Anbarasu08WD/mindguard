@@ -1,0 +1,101 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Notifications – MINDGUARD{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Reminders &amp; alerts</h3>
+        <p class="text-secondary small mb-0">
+            <i data-lucide="shield-check" class="text-success" style="width:14px;height:14px;"></i>
+            Notifications never contain your mood notes or journal text, and only you can read them.
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <form method="POST" action="{{ url_for('notifications.read_all') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-secondary-mg" type="submit"><i data-lucide="check-check"></i> Mark all read</button>
+        </form>
+        <form method="POST" action="{{ url_for('notifications.clear') }}" onsubmit="return confirm('Remove all read notifications?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-secondary-mg" type="submit"><i data-lucide="trash-2"></i> Clear read</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="mg-card">
+            <div class="mg-card-header">
+                <h5 class="fw-bold mb-0">Your notifications</h5>
+                <div class="tabs-pill">
+                    <a href="{{ url_for('notifications.index') }}" class="{% if not unread_only %}on{% endif %}">All</a>
+                    <a href="{{ url_for('notifications.index', filter='unread') }}" class="{% if unread_only %}on{% endif %}">Unread</a>
+                </div>
+            </div>
+            {% if items %}
+                <div class="d-flex flex-column gap-2">
+                {% for n in items %}
+                    <form method="POST" action="{{ url_for('notifications.open_notification', notification_id=n.notification_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="notif-row {% if not n.is_read %}unread{% endif %}">
+                            <span class="notif-icon cat-{{ n.category }}">
+                                {% if n.category == 'reminder' %}<i data-lucide="alarm-clock"></i>
+                                {% elif n.category == 'streak' %}<i data-lucide="flame"></i>
+                                {% elif n.category == 'weekly' %}<i data-lucide="calendar-range"></i>
+                                {% elif n.category == 'security' %}<i data-lucide="shield-alert"></i>
+                                {% else %}<i data-lucide="sparkles"></i>{% endif %}
+                            </span>
+                            <span class="text-start flex-grow-1">
+                                <span class="d-block fw-semibold small">{{ n.title }}</span>
+                                <span class="d-block text-secondary" style="font-size:.8rem;">{{ n.message }}</span>
+                                <span class="d-block text-muted" style="font-size:.7rem;">{{ n.created_at.strftime('%b %d, %Y · %H:%M') }}</span>
+                            </span>
+                            {% if not n.is_read %}<span class="unread-dot" title="Unread"></span>{% endif %}
+                        </button>
+                    </form>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i data-lucide="bell-off"></i></div>
+                    <h6 class="fw-bold">{% if unread_only %}No unread notifications{% else %}Nothing here yet{% endif %}</h6>
+                    <p class="text-secondary small mb-0">Reminders, streaks and your weekly summary will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-5" id="settings">
+        <div class="mg-card">
+            <div class="mg-card-header"><div><h5 class="fw-bold mb-0">Preferences</h5><small class="text-secondary">Choose what you want to be told about</small></div></div>
+            <form method="POST" action="{{ url_for('notifications.settings') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="prefDaily" name="daily_reminder" {% if prefs.daily_reminder %}checked{% endif %}>
+                    <label class="form-check-label" for="prefDaily">Daily check-in reminder</label>
+                </div>
+                <div class="mb-3 ps-4">
+                    <label for="prefTime" class="form-label small">Remind me after</label>
+                    <input type="time" class="form-control" id="prefTime" name="reminder_time" value="{{ prefs.reminder_time }}" required>
+                    <small class="text-muted">Uses the server's local time. Sent only if you have not checked in yet.</small>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="prefStreak" name="streak_alerts" {% if prefs.streak_alerts %}checked{% endif %}>
+                    <label class="form-check-label" for="prefStreak">Streak milestones</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="prefWeekly" name="weekly_summary" {% if prefs.weekly_summary %}checked{% endif %}>
+                    <label class="form-check-label" for="prefWeekly">Weekly summary (Mondays)</label>
+                </div>
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" role="switch" id="prefSecurity" name="security_alerts" {% if prefs.security_alerts %}checked{% endif %}>
+                    <label class="form-check-label" for="prefSecurity">Security alerts (e.g. password changed)</label>
+                </div>
+                <button type="submit" class="btn btn-primary-mg w-100"><i data-lucide="save"></i> Save preferences</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

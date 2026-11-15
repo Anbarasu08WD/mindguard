@@ -1,0 +1,111 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Audit Logs – Admin Console – MINDGUARD{% endblock %}
+{% block page_title %}Security Audit Trail{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Security Audit Trail</h3>
+        <p class="text-secondary small mb-0">Immutable records of authentication attempts, access grants, and security configuration changes.</p>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <a href="{{ url_for('admin.audit_logs_export', **filter_args) }}" class="btn btn-secondary-mg btn-sm">
+            <i data-lucide="download"></i> Export CSV
+        </a>
+        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary-mg btn-sm">
+            <i data-lucide="arrow-left"></i> Back to Admin Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="mg-card mb-4 p-3 bg-white">
+    <form method="GET" action="{{ url_for('admin.audit_logs') }}" class="row g-2 align-items-center">
+        <div class="col-md-3">
+            <input type="text" name="action" class="form-control" placeholder="Action (e.g. LOGIN, MOOD)" value="{{ action_filter or '' }}">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="from" class="form-control" value="{{ date_from }}" aria-label="From date" title="From date">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="to" class="form-control" value="{{ date_to }}" aria-label="To date" title="To date">
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">All Event Statuses</option>
+                <option value="SUCCESS" {% if status_filter == 'SUCCESS' %}selected{% endif %}>SUCCESS</option>
+                <option value="FAILED" {% if status_filter == 'FAILED' %}selected{% endif %}>FAILED</option>
+                <option value="DENIED" {% if status_filter == 'DENIED' %}selected{% endif %}>DENIED</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-mg w-100 justify-content-center">Filter</button>
+            {% if filter_args %}
+                <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary-mg"><i data-lucide="x"></i></a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Logs Table -->
+<div class="mg-card bg-white p-0 overflow-hidden">
+    {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Log ID</th>
+                        <th>Action Performed</th>
+                        <th>Status</th>
+                        <th>User Identifier</th>
+                        <th>Client IP Address</th>
+                        <th class="pe-4">Timestamp (UTC)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in logs %}
+                        <tr>
+                            <td class="ps-4 text-muted">#{{ l.log_id }}</td>
+                            <td><code class="text-dark">{{ l.action }}</code></td>
+                            <td>
+                                {% if l.event_status == 'SUCCESS' %}
+                                    <span class="badge badge-mg badge-success-mg">{{ l.event_status }}</span>
+                                {% elif l.event_status == 'DENIED' %}
+                                    <span class="badge badge-mg badge-danger-mg">{{ l.event_status }}</span>
+                                {% else %}
+                                    <span class="badge badge-mg badge-warning-mg">{{ l.event_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if l.user_id %}
+                                    <span class="text-primary fw-medium">User #{{ l.user_id }}</span>
+                                {% else %}
+                                    <span class="text-muted">Anonymous Visitor</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="text-secondary">{{ l.ip_address or '127.0.0.1' }}</span></td>
+                            <td class="text-muted pe-4">{{ l.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% if total_pages > 1 %}
+    <nav class="d-flex justify-content-between align-items-center p-3 border-top" style="border-color:var(--surface)!important;" aria-label="Audit log pages">
+        <small class="text-muted">{{ total }} events &middot; page {{ page }} of {{ total_pages }}</small>
+        <div class="d-flex gap-2">
+            {% if page > 1 %}<a class="btn btn-sm btn-secondary-mg" href="{{ url_for('admin.audit_logs', page=page-1, **filter_args) }}">&larr; Newer</a>{% endif %}
+            {% if page < total_pages %}<a class="btn btn-sm btn-secondary-mg" href="{{ url_for('admin.audit_logs', page=page+1, **filter_args) }}">Older &rarr;</a>{% endif %}
+        </div>
+    </nav>
+    {% endif %}
+    {% else %}
+        <div class="empty-state py-5">
+            <h6 class="fw-bold">No Audit Logs Found</h6>
+            <p class="text-secondary small mb-0">Clear the search filter or perform actions to generate audit records.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

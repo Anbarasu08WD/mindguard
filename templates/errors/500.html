@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}500 – Internal Server Error – MINDGUARD{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-5 text-center">
+    <div class="mg-card p-5 max-w-700 mx-auto bg-white shadow-sm" style="max-width: 600px;">
+        <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--danger-light); color: var(--danger);">
+            <i data-lucide="server-crash"></i>
+        </div>
+        <h2 class="fw-bold mb-2">500 – Internal Server Error</h2>
+        <p class="text-secondary small mb-4">
+            An unexpected error occurred while processing the transaction. The database transaction was rolled back safely to protect integrity.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="javascript:history.back()" class="btn btn-secondary-mg">Go Back</a>
+            <a href="{{ url_for('landing') }}" class="btn btn-primary-mg">Return Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

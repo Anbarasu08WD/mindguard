@@ -1,0 +1,223 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Wellness Analytics – MINDGUARD{% endblock %}
+{% block page_title %}Wellness Analytics{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Personal Wellness Analytics</h3>
+        <p class="text-secondary small mb-0">Visualizing your emotional patterns and regulatory balance from real database check-ins.</p>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <!-- Timeframe filter buttons -->
+        <div class="btn-group shadow-sm" role="group">
+            <a href="{{ url_for('analytics.index', days=7) }}" class="btn btn-sm {% if selected_days == 7 %}btn-primary-mg{% else %}btn-secondary-mg{% endif %}">Last 7 Days</a>
+            <a href="{{ url_for('analytics.index', days=30) }}" class="btn btn-sm {% if selected_days == 30 %}btn-primary-mg{% else %}btn-secondary-mg{% endif %}">Last 30 Days</a>
+            <a href="{{ url_for('analytics.index', days=90) }}" class="btn btn-sm {% if selected_days == 90 %}btn-primary-mg{% else %}btn-secondary-mg{% endif %}">Last 90 Days</a>
+        </div>
+        <a href="{{ url_for('analytics.export_csv', days=selected_days) }}" class="btn btn-sm btn-secondary-mg ms-1" title="Download your check-ins (without notes) as CSV">
+            <i data-lucide="download"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Summary Metrics Bar -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i data-lucide="check-square"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ analytics.total_entries }}</div>
+                <div class="stat-label">Entries in Window</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i data-lucide="zap"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ analytics.avg_stress }}<span class="fs-6 text-muted">/10</span></div>
+                <div class="stat-label">Average Stress</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon accent">
+                <i data-lucide="battery-charging"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ analytics.avg_energy }}<span class="fs-6 text-muted">/10</span></div>
+                <div class="stat-label">Average Energy</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i data-lucide="smile"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ analytics.avg_mood_score }}<span class="fs-6 text-muted">/5</span></div>
+                <div class="stat-label">Overall Mood Score</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Insights Banner -->
+{% if analytics.insights %}
+    <div class="mg-card mb-4 p-3 bg-white">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i data-lucide="sparkles" class="text-primary" style="width: 18px; height: 18px;"></i>
+            <h6 class="fw-bold mb-0">Data-Driven Observations (Last {{ selected_days }} Days)</h6>
+        </div>
+        <ul class="mb-0 small text-secondary ps-3">
+            {% for item in analytics.insights %}
+                <li class="mb-1">{{ item }}</li>
+            {% endfor %}
+        </ul>
+        <small class="text-muted d-block mt-2 fst-italic">Note: MindGuard provides descriptive analytics for self-monitoring awareness and does not calculate clinical diagnoses.</small>
+    </div>
+{% endif %}
+
+<!-- Charts Grid -->
+{% if analytics.total_entries > 0 %}
+    <div class="row g-4 mb-4">
+        <!-- 1. Mood Trend Line Chart -->
+        <div class="col-lg-8">
+            <div class="mg-card h-100">
+                <div class="mg-card-header">
+                    <div>
+                        <h5 class="fw-bold mb-0">Emotional Trendline</h5>
+                        <small class="text-secondary">Track how your recorded moods fluctuate over time</small>
+                    </div>
+                    <span class="badge badge-mg badge-primary-mg">{{ selected_days }} Days</span>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="moodTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Mood Distribution Doughnut Chart -->
+        <div class="col-lg-4">
+            <div class="mg-card h-100">
+                <div class="mg-card-header">
+                    <div>
+                        <h5 class="fw-bold mb-0">Mood Distribution</h5>
+                        <small class="text-secondary">Proportions of reported emotions</small>
+                    </div>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="moodDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Stress vs Energy Bar Chart -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="mg-card">
+                <div class="mg-card-header">
+                    <div>
+                        <h5 class="fw-bold mb-0">Stress vs. Energy Correlation</h5>
+                        <small class="text-secondary">Compare stress strain against physical & mental energy levels</small>
+                    </div>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="stressEnergyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streaks, consistency and weekday pattern -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-label">Current streak</span>
+                    <span class="stat-icon rose"><i data-lucide="flame"></i></span>
+                </div>
+                <div class="stat-value">{{ analytics.current_streak }}<span class="fs-6 text-muted"> day{{ '' if analytics.current_streak == 1 else 's' }}</span></div>
+                <div><span class="chip neutral">Best: {{ analytics.best_streak }} day{{ '' if analytics.best_streak == 1 else 's' }}</span></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-label">Check-in consistency</span>
+                    <span class="stat-icon green"><i data-lucide="calendar-check"></i></span>
+                </div>
+                <div class="stat-value">{{ analytics.checkin_rate }}<span class="fs-6 text-muted">%</span></div>
+                <div class="progress" style="height:6px;background:var(--surface-high);">
+                    <div class="progress-bar" style="width: {{ analytics.checkin_rate }}%;background:var(--primary);"></div>
+                </div>
+                <small class="text-muted">{{ analytics.total_entries }} of {{ selected_days }} days logged</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-label">Mood &amp; stress link</span>
+                    <span class="stat-icon indigo"><i data-lucide="git-compare"></i></span>
+                </div>
+                {% if analytics.mood_stress_corr is not none %}
+                    <div class="stat-value">{{ analytics.mood_stress_corr }}</div>
+                    <small class="text-muted">Correlation between your mood and stress entries (-1 to 1). A pattern in your data, not a diagnosis.</small>
+                {% else %}
+                    <div class="stat-value text-muted fs-5">Not enough data</div>
+                    <small class="text-muted">Needs at least 7 check-ins in this window.</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mg-card mb-4">
+        <div class="mg-card-header">
+            <div>
+                <h5 class="fw-bold mb-0">Mood by day of the week</h5>
+                <small class="text-secondary">Average recorded mood (1 = Very Low, 5 = Very Happy)</small>
+            </div>
+            {% if analytics.best_weekday %}
+                <span class="chip">Best: {{ analytics.best_weekday }}</span>
+            {% endif %}
+        </div>
+        <div class="weekday-heatmap" role="img" aria-label="Average mood by weekday">
+            {% for name in analytics.weekday_names %}
+                {% set v = analytics.weekday_avg[loop.index0] %}
+                <div class="weekday-cell {% if v is none %}empty{% elif v >= 4 %}hi{% elif v >= 3 %}mid{% else %}lo{% endif %}">
+                    <span class="wd-name">{{ name }}</span>
+                    <span class="wd-val">{{ v if v is not none else '–' }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state py-5">
+        <div class="empty-state-icon">
+            <i data-lucide="bar-chart-2"></i>
+        </div>
+        <h5 class="fw-bold">No Wellness Data Available</h5>
+        <p class="text-secondary small mb-3">Add your daily mood and stress check-ins to unlock interactive graphs and trends.</p>
+        <a href="{{ url_for('mood.add') }}" class="btn btn-primary-mg btn-sm">Add Today's Check-in</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.analyticsData = {{ analytics | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

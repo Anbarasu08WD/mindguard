@@ -1,0 +1,101 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{% if is_edit %}Edit Reflection{% else %}New Reflection{% endif %} – MINDGUARD{% endblock %}
+{% block page_title %}{% if is_edit %}Edit Journal Reflection{% else %}New Private Reflection{% endif %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="mg-card p-4 p-md-5 bg-white shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                <div>
+                    <h4 class="fw-bold mb-1">{% if is_edit %}Edit Reflection{% else %}Write Freely{% endif %}</h4>
+                    <p class="text-secondary small mb-0">Your reflections are encrypted before leaving this transaction.</p>
+                </div>
+                <a href="{{ url_for('journal.index') }}" class="btn btn-sm btn-secondary-mg">
+                    <i data-lucide="arrow-left"></i> Back
+                </a>
+            </div>
+
+            <!-- Privacy Guarantee Banner -->
+            <div class="p-3 bg-light border border-light rounded-3 mb-4 d-flex align-items-center gap-3">
+                <div class="brand-icon" style="width: 38px; height: 38px; font-size: 1.1rem;">
+                    <i data-lucide="lock"></i>
+                </div>
+                <div class="small">
+                    <strong class="d-block text-dark">Cryptographic Field Privacy Active</strong>
+                    <span class="text-secondary">Your text is encrypted using Fernet symmetric authenticated encryption. MindGuard administrators and database operators cannot view plaintext content.</span>
+                </div>
+            </div>
+
+            <form method="POST" action="{% if is_edit %}{{ url_for('journal.edit', journal_id=entry.journal_id) }}{% else %}{{ url_for('journal.add') }}{% endif %}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Title -->
+                <div class="mb-3">
+                    <label for="journalTitle" class="form-label">Reflection Title</label>
+                    <input type="text" class="form-control" id="journalTitle" name="title"
+                           value="{% if is_edit %}{{ entry.title }}{% elif title %}{{ title }}{% endif %}"
+                           placeholder="e.g. End of Semester Thoughts, Morning Gratitude..." required autofocus>
+                </div>
+
+                <!-- Reflection Content -->
+                <div class="mb-4">
+                    <label for="journalContent" class="form-label">Personal Reflection</label>
+                    <textarea class="form-control" id="journalContent" name="content" rows="10"
+                              placeholder="Write anything on your mind. How are you holding up? What challenges did you navigate today? What went well?" required>{% if is_edit %}{{ content }}{% elif content %}{{ content }}{% endif %}</textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                        <small class="text-muted" id="journalWordCount">0 words</small>
+                        <button type="button" class="btn btn-sm btn-secondary-mg" id="promptBtn">
+                            <i data-lucide="lightbulb"></i> Need a prompt?
+                        </button>
+                    </div>
+                    <div class="callout mt-2 d-none" id="promptBox"><i data-lucide="feather"></i><span id="promptText"></span></div>
+                    <small class="text-muted">Content is automatically encrypted upon submission.</small>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="{{ url_for('journal.index') }}" class="btn btn-secondary-mg">Cancel</a>
+                    <button type="submit" class="btn btn-primary-mg">
+                        <i data-lucide="shield-check"></i> Encrypt & Save Reflection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const area = document.getElementById("journalContent");
+    const counter = document.getElementById("journalWordCount");
+    const btn = document.getElementById("promptBtn");
+    const box = document.getElementById("promptBox");
+    const text = document.getElementById("promptText");
+    const prompts = [
+        "What gave you a moment of calm today?",
+        "What is one thing you handled better than you expected?",
+        "What is taking up the most space in your mind right now?",
+        "Who or what are you grateful for today, and why?",
+        "What would make tomorrow feel a little lighter?",
+        "Describe how your body feels right now, from head to toe.",
+        "What is one small thing you can let go of this week?"
+    ];
+    let i = Math.floor(Math.random() * prompts.length);
+    function updateCount() {
+        const words = (area.value.match(/\S+/g) || []).length;
+        counter.textContent = words + (words === 1 ? " word" : " words");
+    }
+    if (area && counter) { area.addEventListener("input", updateCount); updateCount(); }
+    if (btn && box && text) {
+        btn.addEventListener("click", function () {
+            text.textContent = prompts[i % prompts.length];
+            i += 1;
+            box.classList.remove("d-none");
+        });
+    }
+});
+</script>
+{% endblock %}

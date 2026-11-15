@@ -1,0 +1,143 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Mood Tracker – MINDGUARD{% endblock %}
+{% block page_title %}Daily Mood Tracker{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-6">
+        <h3 class="fw-bold mb-1">Your Emotional Check-in History</h3>
+        <p class="text-secondary small mb-0">Record and review daily moods, stress, and energy levels.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{{ url_for('mood.add') }}" class="btn btn-primary-mg">
+            <i data-lucide="plus-circle"></i> Record Today's Mood
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="mg-card mb-4 p-3 bg-white">
+    <form method="GET" action="{{ url_for('mood.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0" 
+                       placeholder="Search notes or mood..." value="{{ search_query or '' }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <input type="date" name="date" class="form-control" value="{{ date_filter or '' }}">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-mg w-100 justify-content-center">
+                <i data-lucide="filter"></i> Filter
+            </button>
+            {% if search_query or date_filter %}
+                <a href="{{ url_for('mood.index') }}" class="btn btn-secondary-mg" title="Clear Filters">
+                    <i data-lucide="x"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Records List -->
+{% if records %}
+    <div class="row g-3">
+        {% for r in records %}
+            <div class="col-lg-6">
+                <div class="mg-card h-100 p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span style="font-size: 2.2rem;">
+                                {% if r.mood == 'Very Happy' %}😄
+                                {% elif r.mood == 'Happy' %}😊
+                                {% elif r.mood == 'Neutral' %}😐
+                                {% elif r.mood == 'Sad' %}😔
+                                {% else %}🌧️{% endif %}
+                            </span>
+                            <div>
+                                <h5 class="fw-bold mb-0">{{ r.mood }}</h5>
+                                <span class="text-secondary small">
+                                    <i data-lucide="calendar" style="width: 13px; height: 13px;"></i>
+                                    {{ r.recorded_at.strftime('%A, %b %d, %Y') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{{ url_for('mood.edit', record_id=r.record_id) }}" class="btn btn-sm btn-outline-secondary" title="Edit Entry">
+                                <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('mood.delete', record_id=r.record_id) }}" 
+                                  onsubmit="return confirm('Are you sure you want to delete this mood record?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Entry">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Sliders Display -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Stress</span>
+                                    <strong class="{% if r.stress_level >= 7 %}text-danger{% elif r.stress_level >= 5 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ r.stress_level }}/10
+                                    </strong>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar {% if r.stress_level >= 7 %}bg-danger{% elif r.stress_level >= 5 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         style="width: {{ r.stress_level * 10 }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Energy</span>
+                                    <strong class="{% if r.energy_level >= 7 %}text-success{% elif r.energy_level >= 4 %}text-primary{% else %}text-secondary{% endif %}">
+                                        {{ r.energy_level }}/10
+                                    </strong>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar {% if r.energy_level >= 7 %}bg-success{% elif r.energy_level >= 4 %}bg-primary{% else %}bg-secondary{% endif %}" 
+                                         style="width: {{ r.energy_level * 10 }}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if r.notes %}
+                        <div class="p-2 px-3 bg-light rounded-3 small text-secondary">
+                            <i data-lucide="message-square" style="width: 13px; height: 13px;" class="me-1 text-muted"></i>
+                            {{ r.notes }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state py-5">
+        <div class="empty-state-icon">
+            <i data-lucide="smile"></i>
+        </div>
+        <h5 class="fw-bold">No Mood Entries Found</h5>
+        <p class="text-secondary small mb-3">
+            {% if search_query or date_filter %}
+                No entries matched your search criteria. Try clearing the filter.
+            {% else %}
+                You haven't recorded any mood entries yet. Checking in daily helps build personal clarity!
+            {% endif %}
+        </p>
+        <a href="{{ url_for('mood.add') }}" class="btn btn-primary-mg btn-sm">Add Today's Entry</a>
+    </div>
+{% endif %}
+{% endblock %}

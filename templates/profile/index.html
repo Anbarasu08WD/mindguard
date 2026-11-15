@@ -1,0 +1,139 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}User Profile – MINDGUARD{% endblock %}
+{% block page_title %}Profile & Account Settings{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <!-- User Info Overview -->
+    <div class="col-lg-4">
+        <div class="mg-card text-center p-4 bg-white">
+            <div class="user-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                {{ user.full_name[:1] | upper }}
+            </div>
+            <h4 class="fw-bold mb-1">{{ user.full_name }}</h4>
+            <p class="text-secondary small mb-3">{{ user.email }}</p>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                {% if user.is_admin %}
+                    <span class="badge badge-mg badge-warning-mg">Administrator</span>
+                {% else %}
+                    <span class="badge badge-mg badge-primary-mg">Standard User</span>
+                {% endif %}
+                <span class="badge badge-mg badge-success-mg">Active Account</span>
+            </div>
+
+            <div class="text-start small text-muted pt-3 border-top">
+                <div class="mb-2 d-flex justify-content-between">
+                    <span>Account Created:</span>
+                    <strong class="text-dark">{{ user.created_at.strftime('%b %d, %Y') }}</strong>
+                </div>
+                <div class="mb-2 d-flex justify-content-between">
+                    <span>Database ID:</span>
+                    <strong class="text-dark">User #{{ user.user_id }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Password Security:</span>
+                    <span class="text-success fw-bold">Werkzeug PBKDF2</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile & Change Password -->
+    <div class="col-lg-8">
+        <!-- Edit Profile Name -->
+        <div class="mg-card mb-4 bg-white">
+            <h5 class="fw-bold mb-3 pb-2 border-bottom">Personal Details</h5>
+            <form method="POST" action="{{ url_for('profile.update') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="profileFullName" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="profileFullName" name="full_name" value="{{ user.full_name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address (Immutable)</label>
+                    <input type="email" class="form-control bg-light" value="{{ user.email }}" readonly disabled>
+                    <small class="text-muted">Primary identifier bound to database foreign keys.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary-mg btn-sm">
+                    <i data-lucide="check"></i> Save Changes
+                </button>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="mg-card mb-4 bg-white">
+            <h5 class="fw-bold mb-3 pb-2 border-bottom">Security & Password</h5>
+            <form method="POST" action="{{ url_for('profile.change_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="currentPassword" class="form-label">Current Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control border-end-0" id="currentPassword" name="current_password" required>
+                        <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="currentPassword">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control border-end-0" id="newPassword" name="new_password" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="newPassword">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control border-end-0" id="confirmNewPassword" name="confirm_new_password" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="confirmNewPassword">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <small class="text-muted d-block mb-3">Must be at least 8 characters with uppercase, lowercase, number, and special symbol.</small>
+
+                <button type="submit" class="btn btn-primary-mg btn-sm">
+                    <i data-lucide="key"></i> Update Password
+                </button>
+            </form>
+        </div>
+
+        <!-- Active Sessions Management -->
+        <div class="mg-card bg-white">
+            <h5 class="fw-bold mb-3 pb-2 border-bottom">Active Authorized Sessions</h5>
+            {% if sessions %}
+                <div class="d-flex flex-column gap-2">
+                    {% for s in sessions %}
+                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                            <div>
+                                <strong class="d-block small">Session #{{ s.session_id }}</strong>
+                                <span class="text-muted small">Started: {{ s.created_at.strftime('%b %d, %Y · %I:%M %p') }} · Expires: {{ s.expires_at.strftime('%b %d') }}</span>
+                            </div>
+                            <form method="POST" action="{{ url_for('profile.revoke_session', session_id=s.session_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i data-lucide="log-out" style="width: 13px; height: 13px;"></i> Revoke
+                                </button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small mb-0">No active persistent sessions tracked.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

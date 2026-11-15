@@ -1,0 +1,128 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Wellness Journal – MINDGUARD{% endblock %}
+{% block page_title %}Private Encrypted Journal{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Your Personal Reflections</h3>
+        <p class="text-secondary small mb-0">
+            <i data-lucide="shield-check" class="text-success me-1" style="width: 14px; height: 14px;"></i>
+            <strong>Your personal reflections are private and protected.</strong> Content is encrypted with Fernet authenticated cryptography prior to database storage.
+        </p>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <a href="{{ url_for('journal.export') }}" class="btn btn-secondary-mg" title="Download your decrypted journal as a Markdown file">
+            <i data-lucide="download"></i> Export
+        </a>
+        <a href="{{ url_for('journal.add') }}" class="btn btn-primary-mg">
+            <i data-lucide="plus-circle"></i> New Journal Reflection
+        </a>
+    </div>
+</div>
+
+
+<!-- Writing stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3"><div class="stat-card"><span class="stat-label">Reflections</span><div class="stat-value">{{ stats.count }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><span class="stat-label">Total words</span><div class="stat-value">{{ stats.total_words }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><span class="stat-label">Avg. length</span><div class="stat-value">{{ stats.avg_words }}<span class="fs-6 text-muted"> words</span></div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><span class="stat-label">Last written</span><div class="stat-value fs-5">{% if stats.last_written %}{{ stats.last_written.strftime('%b %d, %Y') }}{% else %}–{% endif %}</div></div></div>
+</div>
+
+<!-- Search & Date Filter -->
+<div class="mg-card mb-4 p-3 bg-white">
+    <form method="GET" action="{{ url_for('journal.index') }}" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0" 
+                       placeholder="Search reflections by title or text..." value="{{ search_query or '' }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date" class="form-control" value="{{ date_filter or '' }}">
+        </div>
+        <div class="col-md-2">
+            <select name="sort" class="form-select" aria-label="Sort reflections">
+                <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest first</option>
+                <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest first</option>
+                <option value="longest" {% if sort_order == 'longest' %}selected{% endif %}>Longest first</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-mg w-100 justify-content-center">
+                <i data-lucide="filter"></i> Filter
+            </button>
+            {% if search_query or date_filter %}
+                <a href="{{ url_for('journal.index') }}" class="btn btn-secondary-mg" title="Clear Filters">
+                    <i data-lucide="x"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Journal Entries List -->
+{% if entries %}
+    <div class="row g-3">
+        {% for j in entries %}
+            <div class="col-lg-6">
+                <div class="journal-item-card h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="fw-bold mb-0 text-truncate" style="max-width: 75%;">{{ j.title }}</h5>
+                            <span class="journal-encryption-pill">
+                                <i data-lucide="lock" style="width: 11px; height: 11px;"></i> Encrypted
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-muted small mb-3">
+                            <i data-lucide="calendar" style="width: 13px; height: 13px;"></i>
+                            <span>{{ j.created_at.strftime('%A, %b %d, %Y · %I:%M %p') }}</span>
+                        </div>
+                        <p class="text-secondary small mb-3" style="white-space: pre-line; line-height: 1.6;">
+                            {{ j.content }}
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="text-muted" style="font-size: 0.75rem;">
+                            {{ j.words }} words · {{ j.read_min }} min read · Updated {{ j.updated_at.strftime('%b %d, %Y') }}
+                        </span>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('journal.edit', journal_id=j.journal_id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i> Edit
+                            </a>
+                            <form method="POST" action="{{ url_for('journal.delete', journal_id=j.journal_id) }}"
+                                  onsubmit="return confirm('Permanently delete this private reflection?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state py-5">
+        <div class="empty-state-icon" style="background: var(--accent-light); color: #1e695f;">
+            <i data-lucide="book-lock"></i>
+        </div>
+        <h5 class="fw-bold">No Reflections Found</h5>
+        <p class="text-secondary small mb-3">
+            {% if search_query or date_filter %}
+                No reflections matched your search criteria.
+            {% else %}
+                Capture your thoughts, worries, or triumphs in total confidence. Only you hold access to this space.
+            {% endif %}
+        </p>
+        <a href="{{ url_for('journal.add') }}" class="btn btn-primary-mg btn-sm">Write Your First Reflection</a>
+    </div>
+{% endif %}
+{% endblock %}

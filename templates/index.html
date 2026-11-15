@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}MindGuard – Privacy-Preserving Mental Wellness Monitoring{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="hero-section" id="home">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <div class="hero-tagline">
+                    <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                    Row-Level Security · Encrypted journal · Audit logging
+                </div>
+                <h1 class="hero-title">
+                    Your Mental Wellness.<br>
+                    <span class="accent">Your Privacy.</span><br>
+                    Your Control.
+                </h1>
+                <p class="hero-subtitle">
+                    MindGuard is a private space to track mood, stress, and energy, and to write journal reflections.
+                    Your data is isolated by the database itself, so other accounts, and even app administrators, cannot read it.
+                </p>
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary-mg btn-lg">
+                        <i data-lucide="shield-check"></i> Start your private journal
+                    </a>
+                    <a href="#security" class="btn btn-secondary-mg btn-lg">
+                        <i data-lucide="file-text"></i> See how it is protected
+                    </a>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-4 small text-secondary">
+                    <span class="d-flex align-items-center gap-2"><i data-lucide="database" class="text-primary" style="width:16px;height:16px;"></i> PostgreSQL RLS</span>
+                    <span class="d-flex align-items-center gap-2"><i data-lucide="key" class="text-success" style="width:16px;height:16px;"></i> Encrypted journals</span>
+                    <span class="d-flex align-items-center gap-2"><i data-lucide="eye-off" class="text-accent" style="width:16px;height:16px;"></i> Admin-blind design</span>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="preview-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge-mg badge-primary-mg">Daily check-in</span>
+                            <span class="text-muted small">Today</span>
+                        </div>
+                        <span class="badge-mg badge-success-mg"><i data-lucide="lock" style="width:11px;height:11px;"></i> Encrypted</span>
+                    </div>
+                    <p class="eyebrow mb-1">Self-check</p>
+                    <h5 class="mb-3">How are you feeling today?</h5>
+                    <div class="preview-moods mb-3">
+                        <div>😄<small>Very Happy</small></div>
+                        <div class="on">😊<small>Happy</small></div>
+                        <div>😐<small>Neutral</small></div>
+                        <div>😔<small>Sad</small></div>
+                        <div>🌧️<small>Very Low</small></div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><div class="slider-container"><small class="fw-semibold d-block">Stress</small><small class="text-primary fw-semibold">4 / 10</small></div></div>
+                        <div class="col-6"><div class="slider-container"><small class="fw-semibold d-block">Energy</small><small class="text-primary fw-semibold">7 / 10</small></div></div>
+                    </div>
+                    <div class="security-banner small">
+                        <strong class="text-success"><i data-lucide="shield-check" style="width:14px;height:14px;"></i> RLS active.</strong>
+                        <span class="text-secondary">Only your account's rows are visible to your session.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="trust-strip mt-5">
+            <div class="trust-item"><i data-lucide="database" class="text-primary"></i><div><strong>Row-Level Security</strong><span>Enforced inside PostgreSQL</span></div></div>
+            <div class="trust-item"><i data-lucide="lock" class="text-primary"></i><div><strong>Fernet encryption</strong><span>Journal text stored as ciphertext</span></div></div>
+            <div class="trust-item"><i data-lucide="user-x" class="text-primary"></i><div><strong>No admin access</strong><span>Admins see aggregates only</span></div></div>
+            <div class="trust-item"><i data-lucide="scroll-text" class="text-primary"></i><div><strong>Audit trail</strong><span>Security events logged, no content</span></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="py-5 band-alt" id="features">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Privacy by design</span>
+            <h2 class="section-title mt-2">Radical privacy through database security</h2>
+            <p class="section-sub">Protection is built into the database layer, not just the application code.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper"><i data-lucide="shield-check"></i></div>
+                    <h5>Row-Level Security</h5>
+                    <p>Each query runs with a transaction-scoped user identity. PostgreSQL itself filters out every row that is not yours, even if a query forgets its WHERE clause.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper"><i data-lucide="book-lock"></i></div>
+                    <h5>Encrypted journal</h5>
+                    <p>Journal reflections are encrypted with Fernet (authenticated AES) before they are written. Only ciphertext reaches the database tables.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper"><i data-lucide="sliders-horizontal"></i></div>
+                    <h5>Granular consent</h5>
+                    <p>Choose what MindGuard may do with your data: analytics, storage, and policy acceptance are all individual switches you can change at any time.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <div class="feature-icon-wrapper"><i data-lucide="eye-off"></i></div>
+                    <h5>Admin-blind by design</h5>
+                    <p>Administrators manage accounts and read security audit logs and aggregate health numbers. The admin screens contain no mood or journal data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-5" id="how-it-works">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Streamlined protocol</span>
+            <h2 class="section-title mt-2">Three steps to private wellness tracking</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4"><div class="step-card"><div class="step-num">01</div><h5 class="mt-2">Create your account</h5><p class="small text-secondary mb-0">Register and review the consent options. Your password is stored as a salted PBKDF2 hash.</p></div></div>
+            <div class="col-md-4"><div class="step-card"><div class="step-num">02</div><h5 class="mt-2">Check in &amp; reflect</h5><p class="small text-secondary mb-0">Log mood, stress, and energy once a day and write journal entries whenever you like.</p></div></div>
+            <div class="col-md-4"><div class="step-card"><div class="step-num">03</div><h5 class="mt-2">See your patterns</h5><p class="small text-secondary mb-0">Trend charts and gentle, rule-based suggestions are computed only from your own records.</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- SECURITY / COMPARISON -->
+<section class="py-5 band-alt" id="security">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Architecture</span>
+            <h2 class="section-title mt-2">How MindGuard differs from a typical app</h2>
+            <p class="section-sub">A plain comparison of the protections used here.</p>
+        </div>
+        <div class="table-responsive">
+            <table class="compare-table">
+                <thead>
+                    <tr><th>Protection</th><th>Typical wellness app</th><th>MindGuard</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Row isolation</td><td>Application code only</td><td class="good">PostgreSQL Row-Level Security (forced)</td></tr>
+                    <tr><td>Database account</td><td>Often a superuser</td><td class="good">Restricted role, no BYPASSRLS</td></tr>
+                    <tr><td>Journal storage</td><td>Plain text</td><td class="good">Fernet-encrypted ciphertext</td></tr>
+                    <tr><td>Admin visibility</td><td>Full record access</td><td class="good">Aggregates and audit logs only</td></tr>
+                    <tr><td>Accountability</td><td>Limited logging</td><td class="good">Audit log of security events</td></tr>
+                    <tr><td>Your data rights</td><td>Request by email</td><td class="good">Self-service export and delete</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-5" id="faq">
+    <div class="container py-4">
+        <div class="text-center mb-5" style="max-width:720px;margin-inline:auto;">
+            <span class="section-eyebrow">FAQ</span>
+            <h2 class="section-title mt-2">Frequently asked questions</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm overflow-hidden">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">Is MindGuard a medical or psychiatric tool?</button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small"><strong>No.</strong> MindGuard is an academic self-monitoring system. It does not diagnose, treat, or replace professional care. It helps you notice your own patterns.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm overflow-hidden">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">Can administrators view my journal?</button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small">Admin accounts inside the app cannot open individual moods or journals. Role-based access control, Row-Level Security, and field encryption all apply. Admins see account lists, aggregate counts, and audit logs.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 mb-3 rounded-3 shadow-sm overflow-hidden">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">How does Row-Level Security protect me?</button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small">PostgreSQL compares each row's <code>user_id</code> with the transaction setting <code>app.current_user_id</code>. Rows that belong to other users are invisible to your session, even for a badly written query.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 rounded-3 shadow-sm overflow-hidden">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">Can I export or delete my data?</button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small"><strong>Yes.</strong> From the Privacy Center you can download a JSON export of your records or permanently delete your account and everything linked to it.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="pb-5">
+    <div class="container pb-4">
+        <div class="cta-banner">
+            <h2 class="mb-0">Reclaim your inner peace without giving up your privacy</h2>
+            <p>Start tracking in a few minutes. Your journal stays encrypted and your rows stay yours.</p>
+            <a href="{{ url_for('auth.register') }}" class="btn-light-cta"><i data-lucide="shield-check" style="width:18px;height:18px;"></i> Create your account</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

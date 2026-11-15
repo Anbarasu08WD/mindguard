@@ -1,0 +1,111 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{% if is_edit %}Edit Mood Check-in{% else %}New Mood Check-in{% endif %} – MINDGUARD{% endblock %}
+{% block page_title %}{% if is_edit %}Edit Mood Entry{% else %}Daily Mood Check-in{% endif %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="mg-card p-4 p-md-5 bg-white shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <div>
+                    <h4 class="fw-bold mb-1">{% if is_edit %}Update Your Entry{% else %}How Are You Feeling Today?{% endif %}</h4>
+                    <p class="text-secondary small mb-0">Record your current emotional state, stress, and physical energy.</p>
+                </div>
+                <a href="{{ url_for('mood.index') }}" class="btn btn-sm btn-secondary-mg">
+                    <i data-lucide="arrow-left"></i> Back
+                </a>
+            </div>
+
+            <form method="POST" action="{% if is_edit %}{{ url_for('mood.edit', record_id=record.record_id) }}{% else %}{{ url_for('mood.add') }}{% endif %}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" id="selectedMoodInput" name="mood" value="{% if is_edit %}{{ record.mood }}{% else %}Happy{% endif %}">
+
+                <!-- 1. Emoji Mood Selector -->
+                <div class="mb-4">
+                    <label class="form-label d-block mb-3">1. Select Your Overall Mood</label>
+                    <div class="mood-selector-grid">
+                        <div class="mood-option-card {% if (is_edit and record.mood == 'Very Happy') or (not is_edit and False) %}selected{% endif %}" data-mood="Very Happy">
+                            <span class="mood-emoji">😄</span>
+                            <span class="mood-name">Very Happy</span>
+                        </div>
+                        <div class="mood-option-card {% if (is_edit and record.mood == 'Happy') or (not is_edit) %}selected{% endif %}" data-mood="Happy">
+                            <span class="mood-emoji">😊</span>
+                            <span class="mood-name">Happy</span>
+                        </div>
+                        <div class="mood-option-card {% if is_edit and record.mood == 'Neutral' %}selected{% endif %}" data-mood="Neutral">
+                            <span class="mood-emoji">😐</span>
+                            <span class="mood-name">Neutral</span>
+                        </div>
+                        <div class="mood-option-card {% if is_edit and record.mood == 'Sad' %}selected{% endif %}" data-mood="Sad">
+                            <span class="mood-emoji">😔</span>
+                            <span class="mood-name">Sad</span>
+                        </div>
+                        <div class="mood-option-card {% if is_edit and record.mood == 'Very Low' %}selected{% endif %}" data-mood="Very Low">
+                            <span class="mood-emoji">🌧️</span>
+                            <span class="mood-name">Very Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Stress Level Slider (1 - 10) -->
+                <div class="mb-4">
+                    <div class="level-badge-display">
+                        <label for="stressLevelSlider" class="form-label mb-0">2. Stress Level (1 = Serene, 10 = Very High)</label>
+                        <span class="level-value-pill" id="stressLevelDisplay">{% if is_edit %}{{ record.stress_level }}{% else %}4{% endif %}</span>
+                    </div>
+                    <input type="range" class="form-range" id="stressLevelSlider" name="stress_level" min="1" max="10" step="1" 
+                           value="{% if is_edit %}{{ record.stress_level }}{% else %}4{% endif %}">
+                    <div class="d-flex justify-content-between text-muted small px-1">
+                        <span>1 (Serene)</span>
+                        <span>5 (Moderate)</span>
+                        <span>10 (Overwhelmed)</span>
+                    </div>
+                </div>
+
+                <!-- 3. Energy Level Slider (1 - 10) -->
+                <div class="mb-4">
+                    <div class="level-badge-display">
+                        <label for="energyLevelSlider" class="form-label mb-0">3. Energy Level (1 = Drained, 10 = Fully Energized)</label>
+                        <span class="level-value-pill" id="energyLevelDisplay">{% if is_edit %}{{ record.energy_level }}{% else %}7{% endif %}</span>
+                    </div>
+                    <input type="range" class="form-range" id="energyLevelSlider" name="energy_level" min="1" max="10" step="1" 
+                           value="{% if is_edit %}{{ record.energy_level }}{% else %}7{% endif %}">
+                    <div class="d-flex justify-content-between text-muted small px-1">
+                        <span>1 (Drained)</span>
+                        <span>5 (Steady)</span>
+                        <span>10 (Energized)</span>
+                    </div>
+                </div>
+
+                <!-- 4. Date Selection -->
+                <div class="mb-4">
+                    <label for="recordedAtInput" class="form-label">4. Entry Date</label>
+                    <input type="date" class="form-control" id="recordedAtInput" name="recorded_at"
+                           value="{% if is_edit %}{{ record.recorded_at.strftime('%Y-%m-%d') }}{% else %}{{ today.strftime('%Y-%m-%d') }}{% endif %}"
+                           {% if is_edit %}readonly{% endif %}>
+                    <small class="text-muted">MindGuard enforces one check-in per calendar day.</small>
+                </div>
+
+                <!-- 5. Optional Notes -->
+                <div class="mb-4">
+                    <label for="notesInput" class="form-label">5. Optional Personal Context or Reflections</label>
+                    <textarea class="form-control" id="notesInput" name="notes" rows="3" 
+                              placeholder="What contributed to your mood today? e.g. finished coursework, had a great walk...">{% if is_edit and record.notes %}{{ record.notes }}{% endif %}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a href="{{ url_for('mood.index') }}" class="btn btn-secondary-mg">Cancel</a>
+                    <button type="submit" class="btn btn-primary-mg">
+                        <i data-lucide="save"></i> Save Mood Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/mood.js') }}"></script>
+{% endblock %}

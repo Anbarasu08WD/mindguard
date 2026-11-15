@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}400 – Bad Request – MINDGUARD{% endblock %}
+
+{% block content %}
+<div class="container py-5 my-5 text-center">
+    <div class="mg-card p-5 max-w-700 mx-auto bg-white shadow-sm" style="max-width: 600px;">
+        <div class="brand-icon mx-auto mb-3" style="width: 64px; height: 64px; font-size: 1.8rem; background: var(--warning-light); color: var(--warning);">
+            <i data-lucide="alert-circle"></i>
+        </div>
+        <h2 class="fw-bold mb-2">400 – Bad Request</h2>
+        <p class="text-secondary small mb-4">
+            The server could not understand the request due to invalid syntax or missing required parameters.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="javascript:history.back()" class="btn btn-secondary-mg">Go Back</a>
+            <a href="{{ url_for('landing') }}" class="btn btn-primary-mg">Return Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

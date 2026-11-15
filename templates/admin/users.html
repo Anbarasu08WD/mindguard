@@ -1,0 +1,125 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}User Management – Admin Console – MINDGUARD{% endblock %}
+{% block page_title %}User Account Management{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-7">
+        <h3 class="fw-bold mb-1">Registered Accounts Directory</h3>
+        <p class="text-secondary small mb-0">View account status and manage access authorizations.</p>
+    </div>
+    <div class="col-md-5 text-md-end">
+        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary-mg btn-sm">
+            <i data-lucide="arrow-left"></i> Back to Admin Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Search & Status Filter -->
+<div class="mg-card mb-4 p-3 bg-white">
+    <form method="GET" action="{{ url_for('admin.users') }}" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0" 
+                       placeholder="Search by name or email..." value="{{ search or '' }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="disabled" {% if status_filter == 'disabled' %}selected{% endif %}>Disabled</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary-mg w-100 justify-content-center">
+                Filter
+            </button>
+            {% if search or status_filter %}
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary-mg">
+                    <i data-lucide="x"></i>
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="mg-card bg-white p-0 overflow-hidden">
+    {% if users %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th class="ps-4">User</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Registered Date</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="user-avatar" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                        {{ u.full_name[:1] | upper }}
+                                    </div>
+                                    <div>
+                                        <strong class="d-block text-dark">{{ u.full_name }}</strong>
+                                        <span class="text-muted small">{{ u.email }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if u.is_admin %}
+                                    <span class="badge badge-mg badge-warning-mg">Administrator</span>
+                                {% else %}
+                                    <span class="badge badge-mg badge-primary-mg">User</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.account_status == 'active' %}
+                                    <span class="badge badge-mg badge-success-mg">Active</span>
+                                {% else %}
+                                    <span class="badge badge-mg badge-danger-mg">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ u.created_at.strftime('%b %d, %Y') }}</td>
+                            <td class="text-end pe-4">
+                                {% if u.user_id != current_user.user_id %}
+                                    <form method="POST" action="{{ url_for('admin.toggle_user', user_id=u.user_id) }}" class="d-inline"
+                                          onsubmit="return confirm('Toggle account status for {{ u.email }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {% if u.account_status == 'active' %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Deactivate Account">
+                                                <i data-lucide="user-x" style="width: 14px; height: 14px;"></i> Deactivate
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activate Account">
+                                                <i data-lucide="user-check" style="width: 14px; height: 14px;"></i> Activate
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small fst-italic">Current Account</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state py-5">
+            <h6 class="fw-bold">No Users Found</h6>
+            <p class="text-secondary small mb-0">Try clearing the search query or status filter.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

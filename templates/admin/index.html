@@ -1,0 +1,239 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Admin Console – MINDGUARD{% endblock %}
+{% block page_title %}Administrative Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-1">System Health & Security Monitoring</h3>
+        <p class="text-secondary small mb-0">Platform overview, database connectivity, and security event auditing.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('admin.users') }}" class="btn btn-primary-mg btn-sm">
+            <i data-lucide="users"></i> Manage User Accounts
+        </a>
+    </div>
+</div>
+
+<!-- Privacy Boundary Notice -->
+<div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-3 mb-4 rounded-3">
+    <div class="brand-icon bg-info text-white" style="width: 40px; height: 40px; font-size: 1.2rem;">
+        <i data-lucide="shield-alert"></i>
+    </div>
+    <div class="small">
+        <strong class="d-block text-dark">Strict Privacy Boundary Enforced (RBAC & RLS)</strong>
+        <span class="text-secondary">
+            Administrators have zero access to private user journal reflections or individual mood records. Aggregated counts only.
+        </span>
+    </div>
+</div>
+
+<!-- Aggregated Metrics Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i data-lucide="users"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Total Registered Users</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i data-lucide="user-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ active_users }}</div>
+                <div class="stat-label">Active Accounts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i data-lucide="user-x"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ disabled_users }}</div>
+                <div class="stat-label">Disabled Accounts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-icon accent">
+                <i data-lucide="shield-alert"></i>
+            </div>
+            <div>
+                <div class="stat-value">{{ failed_logins }}</div>
+                <div class="stat-label">Failed Auth Events</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trends (aggregate only) -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="mg-card h-100">
+            <div class="mg-card-header">
+                <div><h5 class="fw-bold mb-0">New accounts</h5><small class="text-secondary">Last 14 days &middot; {{ summary.new_7d }} in the last 7</small></div>
+                <span class="chip neutral">{{ summary.admins }} admin{{ '' if summary.admins == 1 else 's' }}</span>
+            </div>
+            <div style="height:220px;"><canvas id="signupsChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="mg-card h-100">
+            <div class="mg-card-header">
+                <div><h5 class="fw-bold mb-0">Security events</h5><small class="text-secondary">Failed logins, denied access and unauthorized attempts, last 14 days</small></div>
+            </div>
+            <div style="height:220px;"><canvas id="eventsChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<div class="mg-card mb-4">
+    <div class="mg-card-header">
+        <div><h5 class="fw-bold mb-0">Most frequent audit actions</h5><small class="text-secondary">Last 30 days &middot; counts only, no content</small></div>
+        <a href="{{ url_for('admin.audit_logs_export') }}" class="btn btn-sm btn-secondary-mg"><i data-lucide="download"></i> Export audit CSV</a>
+    </div>
+    {% if top_actions %}
+        {% set max_n = top_actions[0].count %}
+        {% for a in top_actions %}
+        <div class="d-flex align-items-center gap-3 mb-2 small">
+            <code style="min-width:240px;" class="text-dark">{{ a.action }}</code>
+            <div class="flex-grow-1 progress" style="height:8px;background:var(--surface-high);">
+                <div class="progress-bar" style="width: {{ (100 * a.count / max_n) | round | int }}%;background:var(--primary);"></div>
+            </div>
+            <strong style="min-width:36px;text-align:right;">{{ a.count }}</strong>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-secondary small mb-0">No audit activity recorded in the last 30 days.</p>
+    {% endif %}
+</div>
+
+<!-- Database Connectivity & Security Events -->
+<div class="row g-4 mb-4">
+    <!-- Database Health Card -->
+    <div class="col-lg-5">
+        <div class="mg-card h-100 bg-white">
+            <div class="mg-card-header">
+                <h5 class="fw-bold mb-0">PostgreSQL Relational Engine</h5>
+                {% if db_healthy %}
+                    <span class="badge badge-mg badge-success-mg"><i data-lucide="check"></i> Connected</span>
+                {% else %}
+                    <span class="badge badge-mg badge-danger-mg"><i data-lucide="alert-triangle"></i> Error</span>
+                {% endif %}
+            </div>
+
+            <ul class="list-unstyled mb-4">
+                <li class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-secondary">Engine Version:</span>
+                    <strong class="text-dark">{{ db_version }}</strong>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-secondary">App Connection Role:</span>
+                    <code class="text-primary">mindguard_app</code>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-secondary">Connected role:</span>
+                    <code class="text-primary">{{ rls.role or 'unknown' }}</code>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-secondary">Superuser / BYPASSRLS:</span>
+                    {% if rls.superuser is none %}<span class="text-muted">Unavailable</span>
+                    {% elif rls.superuser or rls.bypass_rls %}<span class="text-danger fw-bold">YES (unsafe)</span>
+                    {% else %}<span class="text-success fw-bold">NO (Restricted)</span>{% endif %}
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-secondary">Tables with FORCE RLS:</span>
+                    {% if rls.tables_total %}
+                        <span class="{% if rls.ok %}text-success{% else %}text-danger{% endif %} fw-bold">{{ rls.tables_forced }} / {{ rls.tables_total }} (live check)</span>
+                    {% else %}<span class="text-muted">Unavailable</span>{% endif %}
+                </li>
+                {% if rls.unprotected %}
+                <li class="py-2 border-bottom small text-danger">Not protected: {{ rls.unprotected | join(', ') }}</li>
+                {% endif %}
+                <li class="d-flex justify-content-between py-2 small">
+                    <span class="text-secondary">SQL Driver:</span>
+                    <strong class="text-dark">psycopg (PostgreSQL 16+)</strong>
+                </li>
+            </ul>
+
+            <div class="p-3 bg-light rounded-3 small text-secondary">
+                <i data-lucide="info" class="text-primary me-1" style="width: 14px; height: 14px;"></i>
+                Transactions strictly apply <code>SELECT set_config('app.current_user_id', :uid, true)</code> for row-level tenancy isolation.
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Security Audit Log -->
+    <div class="col-lg-7">
+        <div class="mg-card h-100 bg-white">
+            <div class="mg-card-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Recent Security Audit Events</h5>
+                    <small class="text-secondary">Real-time authentication and access events</small>
+                </div>
+                <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-sm btn-secondary-mg">Full Audit Trail</a>
+            </div>
+
+            {% if recent_security_events %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Action</th>
+                                <th>Status</th>
+                                <th>User</th>
+                                <th>IP Address</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ev in recent_security_events %}
+                                <tr>
+                                    <td><code class="text-dark">{{ ev.action }}</code></td>
+                                    <td>
+                                        {% if ev.event_status == 'SUCCESS' %}
+                                            <span class="badge badge-mg badge-success-mg">{{ ev.event_status }}</span>
+                                        {% elif ev.event_status == 'DENIED' %}
+                                            <span class="badge badge-mg badge-danger-mg">{{ ev.event_status }}</span>
+                                        {% else %}
+                                            <span class="badge badge-mg badge-warning-mg">{{ ev.event_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if ev.user_id %}User #{{ ev.user_id }}{% else %}<span class="text-muted">Anonymous</span>{% endif %}
+                                    </td>
+                                    <td><span class="text-muted">{{ ev.ip_address or '127.0.0.1' }}</span></td>
+                                    <td class="text-muted">{{ ev.timestamp.strftime('%H:%M:%S') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted small py-4 text-center">No security events logged yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.adminChartData = {{ chart_data | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

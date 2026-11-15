@@ -1,0 +1,300 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Dashboard – MINDGUARD{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block dashboard_content %}
+{% set first_name = current_user.full_name.split(' ')[0] %}
+
+<!-- Greeting -->
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <div class="greet-eyebrow"><i data-lucide="shield-check"></i> Secure session active · Row-Level Security on</div>
+        <h2 class="greet-title">Welcome back, {{ first_name }} 🌿</h2>
+        <p class="text-secondary mb-0">Your private space is secure. Take a mindful breath and log how you feel right now.</p>
+    </div>
+    <div class="d-flex flex-column gap-2 align-items-start">
+        <span class="pill"><i data-lucide="calendar"></i> {{ today.strftime('%A, %b %d') }}</span>
+        <span class="pill indigo"><i data-lucide="lock"></i> Journal encrypted at rest</span>
+    </div>
+</div>
+
+<!-- Today's check-in hero -->
+<div class="checkin-card mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-8">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <div class="eyebrow">Daily check-in</div>
+                    <div class="checkin-title">
+                        {% if today_record %}Today's check-in is saved{% else %}How are you feeling today?{% endif %}
+                    </div>
+                </div>
+                <span class="chip neutral"><i data-lucide="lock" style="width:11px;height:11px;"></i> Notes &amp; journal protected</span>
+            </div>
+
+            {% if today_record %}
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <div class="slider-container text-center">
+                            <div style="font-size:2rem;">
+                                {% if today_record.mood == 'Very Happy' %}😄{% elif today_record.mood == 'Happy' %}😊{% elif today_record.mood == 'Neutral' %}😐{% elif today_record.mood == 'Sad' %}😔{% else %}🌧️{% endif %}
+                            </div>
+                            <strong class="small">{{ today_record.mood }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-4"><div class="slider-container"><small class="text-muted d-block">Stress</small><strong>{{ today_record.stress_level }} / 10</strong></div></div>
+                    <div class="col-sm-4"><div class="slider-container"><small class="text-muted d-block">Energy</small><strong>{{ today_record.energy_level }} / 10</strong></div></div>
+                </div>
+            {% else %}
+                <div class="mood-selector-grid" style="max-width:600px;">
+                    <a href="{{ url_for('mood.add') }}" class="mood-option-card text-decoration-none"><span class="mood-emoji">😄</span><span class="mood-name">Very Happy</span></a>
+                    <a href="{{ url_for('mood.add') }}" class="mood-option-card text-decoration-none"><span class="mood-emoji">😊</span><span class="mood-name">Happy</span></a>
+                    <a href="{{ url_for('mood.add') }}" class="mood-option-card text-decoration-none"><span class="mood-emoji">😐</span><span class="mood-name">Neutral</span></a>
+                    <a href="{{ url_for('mood.add') }}" class="mood-option-card text-decoration-none"><span class="mood-emoji">😔</span><span class="mood-name">Sad</span></a>
+                    <a href="{{ url_for('mood.add') }}" class="mood-option-card text-decoration-none"><span class="mood-emoji">🌧️</span><span class="mood-name">Very Low</span></a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="action-panel">
+                <div class="label"><i data-lucide="shield-check"></i> Protected by Row-Level Security</div>
+                <p>Your check-in is stored in a table that PostgreSQL only shows to your own session.</p>
+                {% if not today_record %}
+                    <a href="{{ url_for('mood.add') }}" class="btn btn-primary-mg w-100"><i data-lucide="check"></i> Complete check-in</a>
+                    <div class="text-center text-muted mt-2" style="font-size:.7rem;">Takes about 30 seconds</div>
+                {% else %}
+                    <a href="{{ url_for('mood.edit', record_id=today_record.record_id) }}" class="btn btn-secondary-mg w-100"><i data-lucide="pencil"></i> Edit today's entry</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Today's mood</span>
+                <span class="stat-icon">
+                    {% if today_record %}
+                        {% if today_record.mood == 'Very Happy' %}😄{% elif today_record.mood == 'Happy' %}😊{% elif today_record.mood == 'Neutral' %}😐{% elif today_record.mood == 'Sad' %}😔{% else %}🌧️{% endif %}
+                    {% else %}<i data-lucide="smile"></i>{% endif %}
+                </span>
+            </div>
+            <div class="stat-value">{% if today_record %}{{ today_record.mood }}{% else %}<span class="text-muted fs-6">Pending</span>{% endif %}</div>
+            <div><span class="chip">{% if today_record %}Logged today{% else %}Not yet logged{% endif %}</span></div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Stress level</span>
+                <span class="stat-icon green"><i data-lucide="activity"></i></span>
+            </div>
+            <div class="stat-value">
+                {% if today_record %}{{ today_record.stress_level }}<span class="fs-6 text-muted"> / 10</span>
+                {% elif analytics.total_entries > 0 %}{{ analytics.avg_stress }}<span class="fs-6 text-muted"> avg</span>
+                {% else %}<span class="text-muted fs-6">--</span>{% endif %}
+            </div>
+            <div><span class="chip neutral">7-day window</span></div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Energy level</span>
+                <span class="stat-icon indigo"><i data-lucide="zap"></i></span>
+            </div>
+            <div class="stat-value">
+                {% if today_record %}{{ today_record.energy_level }}<span class="fs-6 text-muted"> / 10</span>
+                {% elif analytics.total_entries > 0 %}{{ analytics.avg_energy }}<span class="fs-6 text-muted"> avg</span>
+                {% else %}<span class="text-muted fs-6">--</span>{% endif %}
+            </div>
+            <div><span class="chip indigo">7-day window</span></div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Total check-ins</span>
+                <span class="stat-icon rose"><i data-lucide="flame"></i></span>
+            </div>
+            <div class="stat-value">{{ analytics.lifetime_entries }}</div>
+            <div><span class="chip neutral">{{ analytics.total_entries }} in last 7 days</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Trend + insight -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="mg-card h-100">
+            <div class="mg-card-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Mood trend</h5>
+                    <small class="text-secondary">Your last 7 days, from your own records</small>
+                </div>
+                <a href="{{ url_for('analytics.index') }}" class="btn btn-sm btn-secondary-mg">Detailed analytics</a>
+            </div>
+            {% if analytics.total_entries > 0 %}
+                <div style="height: 260px;"><canvas id="dashboardTrendMiniChart"></canvas></div>
+                {% if analytics.insights %}
+                    <div class="callout mt-3"><i data-lucide="lightbulb"></i><span>{{ analytics.insights[0] }}</span></div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i data-lucide="line-chart"></i></div>
+                    <h6 class="fw-bold">No trend yet</h6>
+                    <p class="text-secondary small mb-3">Record a few daily check-ins and your trend line will appear here.</p>
+                    <a href="{{ url_for('mood.add') }}" class="btn btn-primary-mg btn-sm">Add first mood entry</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-4 d-flex flex-column gap-3">
+        <div class="copilot-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="d-flex align-items-center gap-2 fw-semibold"><i data-lucide="sparkles" class="text-accent" style="width:18px;height:18px;"></i> Wellness insight</span>
+                <span class="chip indigo">Local analysis</span>
+            </div>
+            <div class="copilot-quote mb-3">
+                {% if top_insight %}
+                    <strong class="d-block mb-1">{{ top_insight.title }}</strong>{{ top_insight.message }}
+                    <a href="{{ url_for('insights.index') }}" class="d-block small fw-semibold mt-2">Why am I seeing this?</a>
+                {% elif notes %}{{ notes[0] }}{% else %}Keep logging daily and personalised insights will appear here.{% endif %}
+            </div>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('suggestions.index') }}" class="btn-indigo"><span class="d-flex gap-2 align-items-center"><i data-lucide="wind" style="width:14px;height:14px;"></i> See suggested activities</span><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></a>
+                <a href="{{ url_for('journal.add') }}" class="btn-soft"><span class="d-flex gap-2 align-items-center"><i data-lucide="book-open" style="width:14px;height:14px;"></i> Write a journal entry</span><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></a>
+            </div>
+            <div class="text-muted mt-3" style="font-size:.68rem;">Computed on the server from your own recent check-ins. Nothing is sent to third parties.</div>
+        </div>
+
+        <div class="mg-card">
+            <div class="mg-card-header mb-2"><h6 class="fw-bold mb-0">Privacy mechanisms</h6><span class="badge-mg badge-success-mg">Active</span></div>
+            <ul class="list-unstyled mb-3 small">
+                <li class="d-flex gap-2 mb-2"><i data-lucide="shield-check" class="text-success" style="width:16px;height:16px;"></i><span>PostgreSQL Row-Level Security</span></li>
+                <li class="d-flex gap-2 mb-2"><i data-lucide="key" class="text-primary" style="width:16px;height:16px;"></i><span>Fernet journal encryption</span></li>
+                <li class="d-flex gap-2"><i data-lucide="user-check" class="text-accent" style="width:16px;height:16px;"></i><span>Admins cannot read your records</span></li>
+            </ul>
+            <a href="{{ url_for('privacy.index') }}" class="btn btn-secondary-mg btn-sm w-100"><i data-lucide="lock"></i> Privacy Center</a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent journals -->
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <div>
+        <h4 class="fw-bold mb-0" style="font-size:1.2rem;">Encrypted journal reflections</h4>
+        <small class="text-secondary">Decrypted only for you, only inside your session</small>
+    </div>
+    <a href="{{ url_for('journal.index') }}" class="fw-semibold small">View all <i data-lucide="arrow-right" style="width:12px;height:12px;"></i></a>
+</div>
+<div class="row g-3 mb-4">
+    {% for j in recent_journals[:2] %}
+    <div class="col-md-6 col-lg-4">
+        <div class="journal-item-card d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="chip neutral">{{ j.created_at.strftime('%b %d, %Y') }}</span>
+                    <span class="journal-encryption-pill"><i data-lucide="lock" style="width:10px;height:10px;"></i> Encrypted</span>
+                </div>
+                <h6 class="fw-bold mb-2">{{ j.title }}</h6>
+                <p class="text-secondary small mb-3">{{ j.snippet }}</p>
+            </div>
+            <a href="{{ url_for('journal.edit', journal_id=j.journal_id) }}" class="small fw-semibold border-top pt-2" style="border-color:var(--surface)!important;">View &amp; edit</a>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="col-md-6 col-lg-4">
+        <div class="prompt-card">
+            <div>
+                <div class="eyebrow mb-1"><i data-lucide="feather" style="width:12px;height:12px;"></i> Reflection prompt</div>
+                <h6 class="fw-bold">What gave you a sense of calm today?</h6>
+                <p class="text-secondary small">Capture it in your private journal. Entries are encrypted before they are stored.</p>
+            </div>
+            <a href="{{ url_for('journal.add') }}" class="btn btn-sm w-100 mt-2" style="background:#fff;color:var(--primary);font-weight:600;"><i data-lucide="pencil"></i> {% if recent_journals %}Write a note{% else %}Create first entry{% endif %}</a>
+        </div>
+    </div>
+</div>
+
+<!-- Suggestions -->
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <div>
+        <h4 class="fw-bold mb-0" style="font-size:1.2rem;">Suggested for you</h4>
+        <small class="text-secondary">Supportive, rule-based ideas from your recent patterns</small>
+    </div>
+    <a href="{{ url_for('suggestions.index') }}" class="fw-semibold small">View all <i data-lucide="arrow-right" style="width:12px;height:12px;"></i></a>
+</div>
+<div class="row g-3 mb-4">
+    {% for s in suggestions %}
+    <div class="col-md-4">
+        <div class="suggestion-card d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="suggestion-cat-badge">{{ s.category }}</span>
+                <span class="small text-muted"><i data-lucide="clock" style="width:12px;height:12px;"></i> {{ s.estimated_minutes }}m</span>
+            </div>
+            <h6 class="fw-bold mb-2">{{ s.title }}</h6>
+            <p class="text-secondary small mb-3">{{ s.description[:85] }}...</p>
+            <button type="button" class="btn btn-secondary-mg btn-sm mt-auto" data-bs-toggle="modal" data-bs-target="#activityModal"
+                    data-title="{{ s.title }}" data-category="{{ s.category }}"
+                    data-duration="{{ s.estimated_minutes }}" data-desc="{{ s.description }}">
+                <i data-lucide="play"></i> Try it
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Non-clinical banner -->
+<div class="safe-banner">
+    <span><strong class="text-dark">Non-clinical tool:</strong> MindGuard supports self-monitoring and does not replace professional evaluation. If you are in distress, free confidential help is available 24/7.</span>
+    <span class="call-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i> Call or text 988 (US)</span>
+</div>
+
+<!-- Interactive Activity Modal -->
+<div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <span class="badge badge-mg badge-primary-mg mb-1" id="modalActivityCategory">Mindfulness</span>
+                    <h5 class="modal-title fw-bold" id="modalActivityTitle">Activity Title</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+                    <i data-lucide="clock" style="width:15px;height:15px;"></i>
+                    <span>Estimated duration: <strong id="modalActivityDuration">5 mins</strong></span>
+                </div>
+                <div class="p-3 rounded-3 mb-4" style="background:var(--surface-low);">
+                    <p class="text-secondary small mb-0" id="modalActivityDesc">Detailed instructions will appear here.</p>
+                </div>
+                <div class="text-center py-2">
+                    <div class="brand-icon mx-auto mb-2" style="width:52px;height:52px;"><i data-lucide="heart"></i></div>
+                    <p class="text-muted small mb-0">Take this time for yourself. There is no right or wrong pace.</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary-mg" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary-mg" data-bs-dismiss="modal"><i data-lucide="check"></i> Completed</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.dashboardTrendData = {
+        labels: {{ analytics.labels | tojson }},
+        scores: {{ analytics.mood_scores | tojson }}
+    };
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Create Your Account – MINDGUARD{% endblock %}
+
+{% block content %}
+<div class="auth-wrap"><div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-8">
+            <div class="mg-card p-4 p-md-5 bg-white shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="brand-icon mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                        <i data-lucide="shield-plus"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Create Account</h3>
+                    <p class="text-secondary small">Join MindGuard to track wellness with database-level privacy</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label for="fullNameInput" class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="user" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="fullNameInput" name="full_name" 
+                                   value="{{ full_name or '' }}" placeholder="e.g. Alex Rivera" required>
+                        </div>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="mb-3">
+                        <label for="emailInput" class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="email" class="form-control border-start-0" id="emailInput" name="email" 
+                                   value="{{ email or '' }}" placeholder="alex@example.com" required>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label for="passwordInput" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="lock" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="passwordInput" 
+                                   name="password" placeholder="At least 8 chars with uppercase, number & symbol" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="passwordInput">
+                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength mt-2" id="passwordStrengthWrapper" style="display: none;">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar" id="strengthBar" role="progressbar" style="width: 0%;"></div>
+                            </div>
+                            <small class="text-muted" id="strengthText">Password strength</small>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <label for="confirmPasswordInput" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                            </span>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="confirmPasswordInput" 
+                                   name="confirm_password" placeholder="Re-enter your password" required>
+                            <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="confirmPasswordInput">
+                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Consent Checkbox -->
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="consentCheckbox" name="consent_privacy" required>
+                        <label class="form-check-label small text-secondary" for="consentCheckbox">
+                            I understand MindGuard is a self-monitoring awareness tool, and I consent to the privacy-preserving storage of my wellness records under PostgreSQL Row-Level Security.
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-mg w-100 py-2 justify-content-center">
+                        <i data-lucide="user-plus"></i> Create Account
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top border-light">
+                    <p class="text-secondary small mb-0">
+                        Already have an account? <a href="{{ url_for('auth.login') }}" class="fw-bold">Sign In</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const passwordInput = document.getElementById("passwordInput");
+    const strengthWrapper = document.getElementById("passwordStrengthWrapper");
+    const strengthBar = document.getElementById("strengthBar");
+    const strengthText = document.getElementById("strengthText");
+
+    passwordInput.addEventListener("input", function() {
+        const val = this.value;
+        if (!val) {
+            strengthWrapper.style.display = "none";
+            return;
+        }
+        strengthWrapper.style.display = "block";
+
+        let score = 0;
+        if (val.length >= 8) score += 25;
+        if (/[A-Z]/.test(val)) score += 25;
+        if (/[0-9]/.test(val)) score += 25;
+        if (/[^A-Za-z0-9]/.test(val)) score += 25;
+
+        strengthBar.style.width = score + "%";
+
+        if (score <= 25) {
+            strengthBar.className = "progress-bar bg-danger";
+            strengthText.textContent = "Weak (minimum 8 chars, uppercase, number & symbol required)";
+            strengthText.className = "small text-danger";
+        } else if (score <= 75) {
+            strengthBar.className = "progress-bar bg-warning";
+            strengthText.textContent = "Moderate (add special symbols and numbers)";
+            strengthText.className = "small text-warning";
+        } else {
+            strengthBar.className = "progress-bar bg-success";
+            strengthText.textContent = "Strong password";
+            strengthText.className = "small text-success";
+        }
+    });
+});
+</script>
+{% endblock %}

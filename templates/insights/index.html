@@ -1,0 +1,93 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Wellness Insights – MINDGUARD{% endblock %}
+{% block page_title %}Wellness Insights{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Insights from your own check-ins</h3>
+        <p class="text-secondary small mb-0">
+            <i data-lucide="shield-check" class="text-success" style="width:14px;height:14px;"></i>
+            Analysed locally on the server from your records only. Nothing is sent to an external AI service, and these are patterns, not diagnoses.
+        </p>
+    </div>
+    <form method="POST" action="{{ url_for('insights.generate_report') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary-mg"><i data-lucide="file-text"></i> Save this week's report</button>
+    </form>
+</div>
+
+<!-- Trend + weekly comparison -->
+{% set t = data.comparison.this_week %}
+{% set p = data.comparison.previous_week %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <span class="stat-label">Mood trend</span>
+            <div class="stat-value fs-4">
+                {% if data.trend == 'improving' %}↗ Improving{% elif data.trend == 'declining' %}↘ Dipping{% elif data.trend == 'steady' %}→ Steady{% else %}<span class="text-muted fs-6">Not enough data</span>{% endif %}
+            </div>
+            {% if data.slope is not none %}<small class="text-muted">{{ '%+.2f'|format(data.slope) }} pts/day</small>{% endif %}
+        </div>
+    </div>
+    <div class="col-md-3 col-6"><div class="stat-card"><span class="stat-label">Avg mood (7d)</span><div class="stat-value">{{ t.mood if t.mood is not none else '–' }}<span class="fs-6 text-muted"> /5</span></div><small class="text-muted">Prev: {{ p.mood if p.mood is not none else '–' }}</small></div></div>
+    <div class="col-md-3 col-6"><div class="stat-card"><span class="stat-label">Avg stress (7d)</span><div class="stat-value">{{ t.stress if t.stress is not none else '–' }}<span class="fs-6 text-muted"> /10</span></div><small class="text-muted">Prev: {{ p.stress if p.stress is not none else '–' }}</small></div></div>
+    <div class="col-md-3 col-6"><div class="stat-card"><span class="stat-label">Avg energy (7d)</span><div class="stat-value">{{ t.energy if t.energy is not none else '–' }}<span class="fs-6 text-muted"> /10</span></div><small class="text-muted">Prev: {{ p.energy if p.energy is not none else '–' }}</small></div></div>
+</div>
+
+<!-- Insights with "why am I seeing this" -->
+<div class="row g-3 mb-4">
+    {% for i in data.insights %}
+    <div class="col-lg-6">
+        <div class="mg-card h-100 insight-card tone-{{ i.tone }}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">{{ i.title }}</h6>
+                <span class="chip {% if i.tone == 'positive' %}{% elif i.tone == 'support' %}indigo{% else %}neutral{% endif %}">
+                    {% if i.tone == 'positive' %}Positive{% elif i.tone == 'support' %}Support{% else %}Note{% endif %}
+                </span>
+            </div>
+            <p class="text-secondary small mb-3">{{ i.message }}</p>
+            <details>
+                <summary class="small fw-semibold text-primary" style="cursor:pointer;">Why am I seeing this?</summary>
+                <ul class="small text-secondary mt-2 mb-0">
+                    {% for e in i.evidence %}<li>{{ e }}</li>{% endfor %}
+                </ul>
+            </details>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Weekly report -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="mg-card h-100">
+            <div class="mg-card-header"><div><h5 class="fw-bold mb-0">This week in words</h5><small class="text-secondary">Generated from aggregate numbers only</small></div></div>
+            <p class="mb-0">{{ data.report_text }}</p>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="mg-card h-100">
+            <div class="mg-card-header"><h5 class="fw-bold mb-0">Saved reports</h5></div>
+            {% if reports %}
+                <ul class="list-unstyled mb-0">
+                    {% for r in reports %}
+                    <li class="mb-3 pb-3 border-bottom" style="border-color:var(--surface)!important;">
+                        <div class="small fw-semibold">Week of {{ r.report_date.strftime('%b %d, %Y') }}</div>
+                        <div class="small text-secondary">{{ r.report_summary }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-secondary small mb-0">No saved reports yet. Use “Save this week's report” to keep a history. Only you can read them (Row-Level Security).</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="safe-banner">
+    <span><strong class="text-dark">Non-clinical tool:</strong> Insights describe patterns in what you reported. They are not medical advice. If you are in distress, free confidential help is available 24/7.</span>
+    <span class="call-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i> Call or text 988 (US)</span>
+</div>
+{% endblock %}

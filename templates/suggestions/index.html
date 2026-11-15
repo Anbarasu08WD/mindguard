@@ -1,0 +1,171 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Wellness Suggestions – MINDGUARD{% endblock %}
+{% block page_title %}Wellness Recommendations{% endblock %}
+
+{% block dashboard_content %}
+<div class="row align-items-center mb-4 g-3">
+    <div class="col-md-8">
+        <h3 class="fw-bold mb-1">Tailored Self-Care Activities</h3>
+        <p class="text-secondary small mb-0">Non-judgmental, restorative practices matched to your recent wellness patterns.</p>
+    </div>
+</div>
+
+<!-- Rule-based Context Banner -->
+{% if notes %}
+    <div class="mg-card mb-4 p-3 bg-white border-primary-subtle">
+        <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-bold">
+            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+            <span>Current Wellness Insights</span>
+        </div>
+        <ul class="mb-0 small text-secondary ps-3">
+            {% for note in notes %}
+                <li class="mb-1">{{ note }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+<!-- Category Pills Filter -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('suggestions.index') }}" class="btn btn-sm {% if not selected_category %}btn-primary-mg{% else %}btn-secondary-mg{% endif %}">
+        All Categories
+    </a>
+    {% for cat in categories %}
+        <a href="{{ url_for('suggestions.index', category=cat) }}" class="btn btn-sm {% if selected_category == cat %}btn-primary-mg{% else %}btn-secondary-mg{% endif %}">
+            {{ cat }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Suggestions Grid -->
+<div class="row g-4 mb-4">
+    {% for s in all_suggestions %}
+        <div class="col-lg-4 col-md-6">
+            <div class="suggestion-card">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="suggestion-cat-badge">{{ s.category }}</span>
+                        <span class="small text-muted d-flex align-items-center gap-1">
+                            <i data-lucide="clock" style="width: 13px; height: 13px;"></i> {{ s.estimated_minutes }} mins
+                        </span>
+                    </div>
+
+                    <h5 class="fw-bold mb-2">{{ s.title }}</h5>
+                    <p class="text-secondary small mb-4" style="line-height: 1.6;">{{ s.description }}</p>
+                </div>
+
+                <button type="button" class="btn btn-secondary-mg w-100 justify-content-center"
+                        data-bs-toggle="modal" data-bs-target="#suggestionModal"
+                        data-title="{{ s.title }}" data-category="{{ s.category }}"
+                        data-duration="{{ s.estimated_minutes }}" data-desc="{{ s.description }}">
+                    <i data-lucide="play-circle"></i> Start Activity
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Interactive Guided Activity Modal -->
+<div class="modal fade" id="suggestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <span class="badge badge-mg badge-primary-mg mb-1" id="modalSuggestCategory">Category</span>
+                    <h5 class="modal-title fw-bold" id="modalSuggestTitle">Activity Title</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body py-4">
+                <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+                    <i data-lucide="clock" style="width: 15px; height: 15px;"></i>
+                    <span>Target Duration: <strong id="modalSuggestDuration">10 mins</strong></span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <p class="text-secondary small mb-0" id="modalSuggestDesc">Activity description.</p>
+                </div>
+
+                <!-- Guided Timer Display -->
+                <div class="text-center p-3 border rounded-3 bg-white">
+                    <div class="h2 fw-bold text-primary mb-2" id="timerDisplay">Ready</div>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-sm btn-primary-mg" id="startTimerBtn">
+                            <i data-lucide="play"></i> Start
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary-mg" id="resetTimerBtn">
+                            <i data-lucide="rotate-ccw"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary-mg" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary-mg" data-bs-dismiss="modal">
+                    <i data-lucide="check"></i> Mark Complete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("suggestionModal");
+    let timerInterval = null;
+    let secondsLeft = 0;
+    const timerDisplay = document.getElementById("timerDisplay");
+    const startTimerBtn = document.getElementById("startTimerBtn");
+    const resetTimerBtn = document.getElementById("resetTimerBtn");
+
+    modal.addEventListener("show.bs.modal", function (event) {
+        clearInterval(timerInterval);
+        const button = event.relatedTarget;
+        const title = button.getAttribute("data-title");
+        const category = button.getAttribute("data-category");
+        const duration = parseInt(button.getAttribute("data-duration")) || 5;
+        const desc = button.getAttribute("data-desc");
+
+        document.getElementById("modalSuggestTitle").textContent = title;
+        document.getElementById("modalSuggestCategory").textContent = category;
+        document.getElementById("modalSuggestDuration").textContent = duration + " mins";
+        document.getElementById("modalSuggestDesc").textContent = desc;
+
+        secondsLeft = duration * 60;
+        updateTimerDisplay();
+    });
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    startTimerBtn.addEventListener("click", function () {
+        if (timerInterval) return;
+        timerInterval = setInterval(function () {
+            if (secondsLeft > 0) {
+                secondsLeft--;
+                updateTimerDisplay();
+            } else {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerDisplay.textContent = "Complete! Well done.";
+            }
+        }, 1000);
+    });
+
+    resetTimerBtn.addEventListener("click", function () {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        secondsLeft = 5 * 60;
+        updateTimerDisplay();
+    });
+});
+</script>
+{% endblock %}
