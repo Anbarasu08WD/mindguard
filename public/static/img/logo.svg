@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MindGuard logo">
+  <defs>
+    <linearGradient id="mgBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00685f"/>
+      <stop offset="1" stop-color="#0b9a8d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#mgBg)"/>
+  <path d="M32 11 16 17v13c0 11 6.8 20 16 24 9.2-4 16-13 16-24V17L32 11z" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M32 40.5 24.9 33.6a4.9 4.9 0 0 1 6.9-7l.2.2.2-.2a4.9 4.9 0 0 1 6.9 7L32 40.5z" fill="#fff"/>
+</svg>

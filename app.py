@@ -25,7 +25,10 @@ def create_app(config_name: str = None) -> Flask:
     if not config_name:
         config_name = os.getenv("FLASK_ENV", "development")
 
-    app = Flask(__name__)
+    app = Flask(
+    __name__,
+    static_folder=None if config_name == "production" else "static"
+    )
     app.config.from_object(config_by_name.get(config_name, config_by_name["development"]))
 
     # Initialize extensions
@@ -35,8 +38,10 @@ def create_app(config_name: str = None) -> Flask:
     limiter.init_app(app)
     migrate.init_app(app, db)
 
-    # Initialize database and apply Row-Level Security policies
-    init_db(app)
+        # Initialize database only during local development.
+    # Production database migrations and RLS policies are managed separately.
+    if config_name != "production":
+        init_db(app)
     # Register PostgreSQL Row Level Security transaction hooks
     with app.app_context():
         register_rls_listeners()
