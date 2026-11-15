@@ -23,11 +23,14 @@ from routes import (
 
 def create_app(config_name: str = None) -> Flask:
     if not config_name:
-        config_name = os.getenv("FLASK_ENV", "development")
+        if os.getenv("VERCEL") == "1" or os.getenv("VERCEL_ENV"):
+            config_name = "production"
+        else:
+            config_name = os.getenv("FLASK_ENV", "development")
 
     app = Flask(
-    __name__,
-    static_folder=None if config_name == "production" else "static"
+        __name__,
+        static_folder=None if config_name == "production" else "static",
     )
     app.config.from_object(config_by_name.get(config_name, config_by_name["development"]))
 
@@ -38,10 +41,11 @@ def create_app(config_name: str = None) -> Flask:
     limiter.init_app(app)
     migrate.init_app(app, db)
 
-        # Initialize database only during local development.
+    # Initialize database only during local development.
     # Production database migrations and RLS policies are managed separately.
     if config_name != "production":
         init_db(app)
+
     # Register PostgreSQL Row Level Security transaction hooks
     with app.app_context():
         register_rls_listeners()
@@ -67,8 +71,6 @@ def create_app(config_name: str = None) -> Flask:
         from services.database_security import clear_explicit_rls_user
 
         clear_explicit_rls_user()
-
-
 
     # Notification bell data for the app shell (regular users only)
     @app.context_processor
