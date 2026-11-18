@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import Dict, List
 
+from timeutil import local_today
 from extensions import db
 from models.mood import MoodRecord
 from models.report import WellnessReport
@@ -13,7 +14,7 @@ from services.insight_engine import (
 class InsightService:
     @staticmethod
     def _entries(user_id: int, days: int = 28) -> List[Dict]:
-        start = date.today() - timedelta(days=days - 1)
+        start = local_today() - timedelta(days=days - 1)
         rows = (
             MoodRecord.query.filter(MoodRecord.user_id == user_id, MoodRecord.recorded_at >= start)
             .order_by(MoodRecord.recorded_at.asc()).all()
@@ -31,7 +32,7 @@ class InsightService:
     @staticmethod
     def overview(user_id: int) -> Dict:
         entries = InsightService._entries(user_id)
-        today = date.today()
+        today = local_today()
         direction, slope = trend_direction([e["score"] for e in entries[-14:]])
         return {
             "insights": build_insights(entries, today),
@@ -44,13 +45,13 @@ class InsightService:
 
     @staticmethod
     def top_insight(user_id: int):
-        items = build_insights(InsightService._entries(user_id), date.today())
+        items = build_insights(InsightService._entries(user_id), local_today())
         return items[0] if items else None
 
     @staticmethod
     def save_weekly_report(user_id: int) -> WellnessReport:
         """Create or refresh this week's saved report (one per week, keyed by Monday's date)."""
-        today = date.today()
+        today = local_today()
         week_start = today - timedelta(days=today.weekday())
         text_ = weekly_report_text(InsightService._entries(user_id), today)
         report = WellnessReport.query.filter_by(user_id=user_id, report_date=week_start).first()

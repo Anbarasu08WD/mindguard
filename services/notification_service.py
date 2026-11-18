@@ -6,6 +6,7 @@ from models.mood import MoodRecord
 from models.notification import Notification, NotificationPreference
 from services.analytics_utils import calculate_streaks
 from services.notification_rules import due_notifications, parse_hhmm, safe_internal_link
+from timeutil import local_now
 
 PREF_FIELDS = ("daily_reminder", "streak_alerts", "weekly_summary", "security_alerts")
 
@@ -57,7 +58,7 @@ class NotificationService:
     @staticmethod
     def refresh(user_id: int, now: datetime = None) -> int:
         """Create any notifications that are due for this user. Returns how many were created."""
-        now = now or datetime.now()
+        now = now or local_now()
         today = now.date()
         pref = NotificationService.get_preferences(user_id)
 

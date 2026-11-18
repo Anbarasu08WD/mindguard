@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import func
+from timeutil import local_today
 from extensions import db
 from models.mood import MoodRecord
 
@@ -30,7 +31,7 @@ class AnalyticsService:
         over a specified number of days (7, 30, 90).
         Uses actual records stored in PostgreSQL.
         """
-        end_date = date.today()
+        end_date = local_today()
         start_date = end_date - timedelta(days=days - 1)
 
         # Retrieve records in window ordered by date ascending

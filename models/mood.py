@@ -1,5 +1,6 @@
 from datetime import datetime, date, timezone
 from extensions import db
+from timeutil import local_today
 
 
 class MoodRecord(db.Model):
@@ -11,7 +12,7 @@ class MoodRecord(db.Model):
     stress_level = db.Column(db.Integer, nullable=False)  # 1 to 10
     energy_level = db.Column(db.Integer, nullable=False)  # 1 to 10
     notes = db.Column(db.Text, nullable=True)
-    recorded_at = db.Column(db.Date, nullable=False, default=date.today)
+    recorded_at = db.Column(db.Date, nullable=False, default=local_today)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (

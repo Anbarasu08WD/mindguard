@@ -8,6 +8,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _normalize_db_url(url):
+    """Make provider URLs work with SQLAlchemy 2 + psycopg 3.
+
+    Neon, Supabase and Vercel Postgres often hand out postgres:// or postgresql://
+    URLs, which SQLAlchemy would try to open with psycopg2 (not installed).
+    """
+    if not url:
+        return url
+    url = url.strip()
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+def _env_db(name, default=None):
+    return _normalize_db_url(os.getenv(name, default))
+
+
 class Config:
     """Base application configuration."""
 
@@ -15,10 +34,10 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
 
     # Primary database connection (restricted application role)
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI = _env_db("DATABASE_URL")
 
     # Separate migration connection (privileged migration role)
-    MIGRATION_DATABASE_URL = os.getenv("MIGRATION_DATABASE_URL")
+    MIGRATION_DATABASE_URL = _env_db("MIGRATION_DATABASE_URL")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -28,6 +47,9 @@ class Config:
         "pool_size": 2,
         "max_overflow": 0,
         "pool_recycle": 300,
+        # Required when the database sits behind a transaction pooler
+        # (PgBouncer, Neon pooled host, Supabase pooler): no server-side prepared statements.
+        "connect_args": {"prepare_threshold": None},
     }
 
     # Preserve the existing key to decrypt previously encrypted journal entries.
@@ -67,10 +89,7 @@ class TestingConfig(Config):
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
 
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "TEST_DATABASE_URL",
-        os.getenv("DATABASE_URL")
-    )
+    SQLALCHEMY_DATABASE_URI = _env_db("TEST_DATABASE_URL", os.getenv("DATABASE_URL"))
 
     FERNET_KEY = os.getenv("FERNET_KEY", "")
 
@@ -86,8 +105,8 @@ class ProductionConfig(Config):
 
     # Production must use explicitly configured environment variables.
     SECRET_KEY = os.getenv("SECRET_KEY")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
-    MIGRATION_DATABASE_URL = os.getenv("MIGRATION_DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI = _env_db("DATABASE_URL")
+    MIGRATION_DATABASE_URL = _env_db("MIGRATION_DATABASE_URL")
     FERNET_KEY = os.getenv("FERNET_KEY", "")
 
 

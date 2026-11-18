@@ -7,6 +7,7 @@ from models.mood import MoodRecord
 from services.analytics_service import AnalyticsService, MOOD_SCORE_MAP
 from services.audit_service import AuditService
 from services.security_service import user_required
+from timeutil import local_today
 
 analytics_bp = Blueprint("analytics", __name__)
 
@@ -63,7 +64,7 @@ def export_csv():
     days = request.args.get("days", 30, type=int)
     if days not in [7, 30, 90]:
         days = 30
-    start = date.today() - timedelta(days=days - 1)
+    start = local_today() - timedelta(days=days - 1)
 
     records = (
         MoodRecord.query.filter(

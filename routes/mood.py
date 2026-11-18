@@ -5,6 +5,7 @@ from extensions import db
 from models.mood import MoodRecord
 from services.security_service import user_required
 from services.audit_service import AuditService
+from timeutil import local_today
 
 mood_bp = Blueprint("mood", __name__)
 
@@ -35,7 +36,7 @@ def index():
         )
 
     records = query.order_by(MoodRecord.recorded_at.desc()).all()
-    today = date.today()
+    today = local_today()
     today_logged = any(r.recorded_at == today for r in records)
 
     return render_template(
@@ -53,7 +54,7 @@ def index():
 @user_required
 def add():
     user_id = current_user.user_id
-    today = date.today()
+    today = local_today()
 
     if request.method == "POST":
         mood = request.form.get("mood", "").strip()

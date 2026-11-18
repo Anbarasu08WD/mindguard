@@ -4,6 +4,7 @@ from extensions import db
 from models.suggestion import WellnessSuggestion
 from models.mood import MoodRecord
 from services.analytics_service import MOOD_SCORE_MAP
+from timeutil import local_today
 
 
 class RecommendationService:
@@ -14,7 +15,7 @@ class RecommendationService:
         derived from the user's recent recorded patterns.
         """
         # Fetch last 7 days of entries
-        seven_days_ago = date.today() - timedelta(days=7)
+        seven_days_ago = local_today() - timedelta(days=7)
         recent_records = (
             MoodRecord.query.filter(
                 MoodRecord.user_id == user_id,

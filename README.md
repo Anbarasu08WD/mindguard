@@ -335,3 +335,33 @@ Developed as an academic capstone project in **Information Technology**. Designe
 | **Admin dashboard** | Live RLS/role verification from PostgreSQL catalogs, signup and security-event charts, top audit actions, audit filters (date range), pagination and CSV export. Still aggregate-only |
 
 **Database note:** the two new tables are created automatically on start-up by `init_db()`, and their RLS policies are applied by `apply_rls_policies()`. `scripts/apply_rls.sql` was updated for manual setups.
+
+---
+
+## Deploying to Vercel
+
+**Project layout for Vercel:** `app.py` exposes the Flask `app`; static files live in `public/static` (Vercel serves `public/` from its CDN at the site root, Flask serves the same folder locally); `vercel.json` and `.vercelignore` keep the bundle small.
+
+**1. Database (one time, from your own computer).** Vercel functions do not create tables or policies. Point `MIGRATION_DATABASE_URL` in your local `.env` at the *production* database and run:
+
+```bash
+python scripts/init_production_db.py
+```
+
+Re-run it whenever the schema changes (for example after adding tables).
+
+**2. Environment variables** (Vercel > Project > Settings > Environment Variables, then redeploy):
+
+| Variable | Value |
+|---|---|
+| `SECRET_KEY` | long random string |
+| `FERNET_KEY` | the same key your journal entries were encrypted with |
+| `DATABASE_URL` | connection string for the restricted `mindguard_app` role (a pooled/serverless URL is recommended) |
+| `APP_TIMEZONE` | e.g. `Asia/Kolkata`, so "today", streaks and reminders use your local day |
+
+`postgres://` and `postgresql://` URLs are converted automatically. `MIGRATION_DATABASE_URL` is **not** needed on Vercel.
+
+**3. Notes**
+- Rate limits use in-memory storage, so they apply per serverless instance. For strict global limits use Redis (`RATELIMIT_STORAGE_URI`).
+- Never commit `.env`. Use `requirements-dev.txt` locally to install the test tools (`pytest`).
+- If a deployment fails, open Vercel > Logs. A missing variable is reported by name at start-up.

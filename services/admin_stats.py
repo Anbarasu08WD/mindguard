@@ -7,6 +7,7 @@ from extensions import db
 from models.audit import AuditLog
 from models.user import User
 from services.admin_utils import fill_daily_series
+from timeutil import local_today
 
 SECURITY_EVENT_FILTER = or_(
     AuditLog.action.like("LOGIN_FAILURE%"),
@@ -27,7 +28,7 @@ class AdminStatsService:
             .filter(User.created_at >= start)
             .group_by(func.date(User.created_at)).all()
         )
-        return fill_daily_series({d: c for d, c in rows}, days, date.today())
+        return fill_daily_series({d: c for d, c in rows}, days, local_today())
 
     @staticmethod
     def security_events_by_day(days: int = 14):
@@ -37,7 +38,7 @@ class AdminStatsService:
             .filter(AuditLog.timestamp >= start, SECURITY_EVENT_FILTER)
             .group_by(func.date(AuditLog.timestamp)).all()
         )
-        return fill_daily_series({d: c for d, c in rows}, days, date.today())
+        return fill_daily_series({d: c for d, c in rows}, days, local_today())
 
     @staticmethod
     def top_actions(days: int = 30, limit: int = 8) -> List[Dict]:

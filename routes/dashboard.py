@@ -9,6 +9,7 @@ from services.recommendation_service import RecommendationService
 from services.encryption_service import EncryptionService
 from services.insight_service import InsightService
 from services.security_service import user_required
+from timeutil import local_today
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -18,7 +19,7 @@ dashboard_bp = Blueprint("dashboard", __name__)
 @user_required
 def index():
     user_id = current_user.user_id
-    today = date.today()
+    today = local_today()
 
     # Retrieve today's mood record if existing
     today_record = MoodRecord.query.filter_by(user_id=user_id, recorded_at=today).first()

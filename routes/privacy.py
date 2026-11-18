@@ -11,6 +11,7 @@ from models.session import UserSession
 from services.encryption_service import EncryptionService
 from services.security_service import user_required
 from services.audit_service import AuditService
+from timeutil import local_now
 
 privacy_bp = Blueprint("privacy", __name__)
 
@@ -140,7 +141,7 @@ def export_data():
     AuditService.log_event("USER_DATA_EXPORTED", "SUCCESS", user_id)
 
     json_str = json.dumps(export_payload, indent=2)
-    filename = f"mindguard_data_export_user_{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    filename = f"mindguard_data_export_user_{user_id}_{local_now().strftime('%Y%m%d_%H%M%S')}.json"
 
     return Response(
         json_str,

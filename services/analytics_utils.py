@@ -1,6 +1,7 @@
 """Pure analytics helpers (no database access), easy to unit test."""
 from datetime import date
 from typing import List
+from timeutil import local_today
 
 
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -12,7 +13,7 @@ def calculate_streaks(dates: List[date], today: date = None):
     A streak is a run of consecutive calendar days. The current streak is
     still alive if the latest check-in was today or yesterday.
     """
-    today = today or date.today()
+    today = today or local_today()
     unique = sorted(set(dates))
     if not unique:
         return 0, 0

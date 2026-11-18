@@ -1,7 +1,8 @@
 import os
-from datetime import datetime
+import time
 from database import init_db
 from flask import Flask, render_template, redirect, url_for, request, session
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config_by_name
 from extensions import db, login_manager, csrf, limiter, migrate
 from models.user import User
@@ -28,11 +29,34 @@ def create_app(config_name: str = None) -> Flask:
         else:
             config_name = os.getenv("FLASK_ENV", "development")
 
+    # Static files live in public/static: Vercel serves public/ from its CDN at the
+    # site root (so /static/... works), and Flask serves the same folder locally.
+    # The static endpoint must always exist, otherwise url_for('static', ...) in the
+    # templates raises BuildError and every page (including the error pages) fails.
+    base_dir = os.path.abspath(os.path.dirname(__file__))
     app = Flask(
         __name__,
-        static_folder=None if config_name == "production" else "static",
+        static_folder=os.path.join(base_dir, "public", "static"),
+        static_url_path="/static",
     )
     app.config.from_object(config_by_name.get(config_name, config_by_name["development"]))
+
+    if config_name == "production":
+        missing = [
+            name for name, value in (
+                ("SECRET_KEY", app.config.get("SECRET_KEY")),
+                ("DATABASE_URL", app.config.get("SQLALCHEMY_DATABASE_URI")),
+                ("FERNET_KEY", app.config.get("FERNET_KEY")),
+            ) if not value
+        ]
+        if missing:
+            raise RuntimeError(
+                "Missing required environment variable(s): " + ", ".join(missing)
+                + ". Add them in Vercel > Project > Settings > Environment Variables and redeploy."
+            )
+        # Vercel terminates TLS in front of the function: trust X-Forwarded-* headers so
+        # url_for, secure cookies, CSRF referrer checks and client IPs are correct.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # Initialize extensions
     db.init_app(app)
@@ -84,7 +108,7 @@ def create_app(config_name: str = None) -> Flask:
                 return empty
             uid = current_user.user_id
             # Generate due notifications at most every 10 minutes per session
-            now_ts = int(datetime.now().timestamp())
+            now_ts = int(time.time())
             if now_ts - session.get("notif_checked_at", 0) > 600:
                 NotificationService.refresh(uid)
                 session["notif_checked_at"] = now_ts
@@ -114,6 +138,11 @@ def create_app(config_name: str = None) -> Flask:
     def landing():
         return render_template("index.html")
 
+    @app.route("/favicon.ico")
+    @limiter.exempt
+    def favicon():
+        return redirect(url_for("static", filename="img/logo.svg"), code=301)
+
     # Security Headers
     @app.after_request
     def set_security_headers(response):
@@ -134,26 +163,34 @@ def create_app(config_name: str = None) -> Flask:
         return response
 
     # Error Handlers
+    def render_error(template, code, title):
+        """Render the styled error page; never let a template problem hide the real error."""
+        try:
+            return render_template(template), code
+        except Exception:
+            app.logger.exception("Error template %s failed to render", template)
+            return f"<h1>{code} &ndash; {title}</h1><p><a href='/'>Back to MindGuard</a></p>", code
+
     @app.errorhandler(400)
     def bad_request(e):
-        return render_template("errors/400.html"), 400
+        return render_error("errors/400.html", 400, "Bad request")
 
     @app.errorhandler(401)
     def unauthorized(e):
-        return render_template("errors/401.html"), 401
+        return render_error("errors/401.html", 401, "Unauthorized")
 
     @app.errorhandler(403)
     def forbidden(e):
-        return render_template("errors/403.html"), 403
+        return render_error("errors/403.html", 403, "Forbidden")
 
     @app.errorhandler(404)
     def not_found(e):
-        return render_template("errors/404.html"), 404
+        return render_error("errors/404.html", 404, "Page not found")
 
     @app.errorhandler(500)
     def server_error(e):
         db.session.rollback()
-        return render_template("errors/500.html"), 500
+        return render_error("errors/500.html", 500, "Server error")
 
     return app
 

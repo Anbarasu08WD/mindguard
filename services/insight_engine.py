@@ -7,6 +7,7 @@ patterns in self-reported data, not diagnoses.
 """
 from datetime import date, timedelta
 from typing import Dict, List, Optional, Tuple
+from timeutil import local_today
 
 # An entry is a dict: {"date": date, "score": 1..5, "stress": 1..10, "energy": 1..10}
 Entry = Dict
@@ -90,7 +91,7 @@ def build_insights(entries: List[Entry], today: date = None) -> List[Dict]:
 
     tone is one of: 'positive', 'info', 'support'.
     """
-    today = today or date.today()
+    today = today or local_today()
     rows = sorted(entries, key=lambda e: e["date"])[-14:]
     insights: List[Dict] = []
 
@@ -193,7 +194,7 @@ def build_insights(entries: List[Entry], today: date = None) -> List[Dict]:
 
 def weekly_report_text(entries: List[Entry], today: date = None) -> str:
     """Plain-language weekly summary. Contains only aggregate numbers."""
-    today = today or date.today()
+    today = today or local_today()
     cmp_ = weekly_comparison(entries, today)
     t, p = cmp_["this_week"], cmp_["previous_week"]
     if t["count"] == 0:
